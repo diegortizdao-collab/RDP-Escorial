@@ -83,6 +83,7 @@ tbody tr.rw{cursor:pointer}tbody tr.rw:hover td{background:#F3F8FC}
 #modal .x{float:right;border:0;background:transparent;font-size:22px;cursor:pointer;color:var(--mut)}
 .sw{display:flex;align-items:center;gap:8px;cursor:pointer}.sw input{width:18px;height:18px}
 .who{margin-left:auto;display:flex;align-items:center;gap:8px;padding-bottom:6px}.who span{font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase}.who select{width:auto}
+.av img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}.av.sm{width:24px;height:24px;font-size:10px;vertical-align:middle;margin-right:4px}.av.lg{width:64px;height:64px;font-size:22px}.av.clk{cursor:pointer}
 .av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--sky),var(--navy));color:#fff;font-weight:800;display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex:none}
 .sub{display:flex;gap:8px;margin-bottom:12px}.sub button{border:1px solid #C5D2E0;background:#fff;border-radius:18px;padding:6px 16px;font:inherit;font-weight:700;color:var(--navy);cursor:pointer}.sub button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
 .mail{border:1px solid var(--line);border-radius:10px;background:#F8FAFC;padding:14px;font-size:13px}.mail hr{border:0;border-top:1px solid var(--line);margin:8px 0}
@@ -304,7 +305,7 @@ function renderFicha(){
  ${BAN(`<b>Muestra con datos de demostración (simulados).</b>`)}
  <div class="card"><div class="filters"><div class="f" style="max-width:340px;flex:1 1 300px"><label>RDP</label><select onchange="UI.sel=this.value;UI.fp=null;renderFicha()">${RDPS.map(x=>`<option value="${x.id}" ${x.id===r.id?'selected':''}>${x.id} · ${x.titulo}</option>`).join('')}</select></div></div></div>
  <div class="card"><h3>${r.id} · ${r.titulo} ${tag(HN[r.herr],HC[r.herr])} ${r.cerrado?tag('Cerrado','#667085'):tag(f+' · '+FN[f],FC[f])} ${tag('Muda: '+r.muda,MC[MUDAS.indexOf(r.muda)])}</h3>
-  <div class="mut" style="margin-bottom:8px">${r.loc.planta} · ${r.loc.uet} · ${r.loc.sector} &nbsp;|&nbsp; Líder: ${r.lider} &nbsp;|&nbsp; Inicio: ${fd(r.inicio)} &nbsp;|&nbsp; Origen: ${r.origen} (${r.ind.u})</div>
+  <div class="mut" style="margin-bottom:8px">${r.loc.planta} · ${r.loc.uet} · ${r.loc.sector} &nbsp;|&nbsp; Líder: ${AVH(r.liderEmail,'sm')}${r.lider} &nbsp;|&nbsp; Inicio: ${fd(r.inicio)} &nbsp;|&nbsp; Origen: ${r.origen} (${r.ind.u})</div>
   <div class="bandrow"><div style="background:${FC.P};grid-column:1/7">P · Planificar</div><div style="background:${FC.D}">D</div><div style="background:${FC.C}">C</div><div style="background:${FC.A}">A</div></div>
   <div class="big">${PASOS.map((n,p)=>`<div class="bs ${p<r.paso?'done':p===r.paso?'cur':''}" style="${p<=r.paso?'background:'+FC[FASE(p)]:''}"><b>${p<r.paso?'✓':p}</b>${n}</div>`).join('')}</div>${pasoNav(r)}</div>
  ${formCard(r)}
@@ -320,7 +321,7 @@ function renderFicha(){
  <div class="card"><h3>Registro de acciones <small>${A.length} de ${r.acc.length}</small><button class="btn alt" style="margin-left:auto" onclick="openAcc()">+ Acción</button></h3>
   <div class="filters" style="margin-bottom:10px"><div class="f"><label>Tipo</label><select onchange="UI.aTipo=this.value;renderFicha()">${opts(Object.keys(TIPOC).map(x=>[x,x]),UI.aTipo,'Todos')}</select></div><div class="f"><label>Estado</label><select onchange="UI.aEst=this.value;renderFicha()">${opts(Object.keys(ESTC).map(x=>[x,x]),UI.aEst,'Todos')}</select></div></div>
   <div class="tw"><table><thead><tr><th>ID</th><th>Tipo</th><th>Acción</th><th>Causa raíz</th><th>Responsable</th><th>Inicio</th><th>Compromiso</th><th>Avance</th><th>Estado</th></tr></thead><tbody>
-  ${A.map(a=>`<tr><td class="nw"><b>${a.id}</b></td><td>${tag(a.tipo,TIPOC[a.tipo])}</td><td>${a.txt}</td><td class="mut nw">${a.cr==='—'?'—':a.cr+' · '+(r.crs[+a.cr.slice(2)-1]||'').slice(0,26)}</td><td class="mut">${a.resp}</td><td class="nw">${fd(a.ini)}</td><td class="nw">${fd(a.comp)}</td><td style="min-width:110px"><div class="pb"><div style="width:${a.av}%;background:${ESTC[a.est]}"></div></div><small class="mut">${a.av}%</small></td><td>${tag(a.est,ESTC[a.est])}</td></tr>`).join('')||'<tr><td colspan="9" class="mut">Aún no hay acciones en este paso del RDP.</td></tr>'}
+  ${A.map(a=>`<tr><td class="nw"><b>${a.id}</b></td><td>${tag(a.tipo,TIPOC[a.tipo])}</td><td>${a.txt}</td><td class="mut nw">${a.cr==='—'?'—':a.cr+' · '+(r.crs[+a.cr.slice(2)-1]||'').slice(0,26)}</td><td class="mut nw">${AVH(a.respE,'sm')}${a.resp}</td><td class="nw">${fd(a.ini)}</td><td class="nw">${fd(a.comp)}</td><td style="min-width:110px"><div class="pb"><div style="width:${a.av}%;background:${ESTC[a.est]}"></div></div><small class="mut">${a.av}%</small></td><td>${tag(a.est,ESTC[a.est])}</td></tr>`).join('')||'<tr><td colspan="9" class="mut">Aún no hay acciones en este paso del RDP.</td></tr>'}
   </tbody></table></div>
   <div class="note">Un único registro alimenta las tres tablas del A3 (contención, contramedidas e implementación). Cada contramedida queda ligada a la causa raíz que ataca. Sin pasos de aprobación: al asignar un responsable le llega un correo y la acción queda en curso.</div></div>`;
  const n=10,imp=r.paso>=6?Math.round(n*.7):n;const q=rng(5+r.id.length*r.paso+r.paso);
@@ -380,7 +381,7 @@ function renderAdm(){
 function admUsers(){
  return `<div class="card"><h3>Usuarios <small>${USERS.length} cargados</small><button class="btn alt" style="margin-left:auto" onclick="openUser()">+ Usuario</button></h3>
  <div class="tw"><table><thead><tr><th>Usuario</th><th>Área</th><th>Rol</th><th>Acciones abiertas</th><th></th></tr></thead><tbody>
- ${USERS.map((u,i)=>`<tr><td><div class="rowh"><span class="av">${u.n[0]}${u.a[0]}</span><div><b>${u.a} ${u.n}</b><br><span class="mut">${u.e}</span></div></div></td><td>${u.ar}</td><td>${tag(u.ro,u.ro==='Administrador'?'#0F5C8C':'#2E9BD6')}</td><td>${(i*5+3)%7}</td><td class="r"><button class="btn ghost" onclick="openUserEdit('${u.e}')">Editar</button></td></tr>`).join('')}
+ ${USERS.map((u,i)=>`<tr><td><div class="rowh">${AVH(u.e)}<div><b>${u.a} ${u.n}</b><br><span class="mut">${u.e}</span></div></div></td><td>${u.ar}</td><td>${tag(u.ro,u.ro==='Administrador'?'#0F5C8C':'#2E9BD6')}</td><td>${(i*5+3)%7}</td><td class="r"><button class="btn ghost" onclick="openUserEdit('${u.e}')">Editar</button></td></tr>`).join('')}
  </tbody></table></div></div>
  <div class="grid"><div class="card"><h3>Roles</h3>
   <p><b>${tag('Usuario','#2E9BD6')}</b> Crea RDP, carga pérdidas (estándar o libres), registra acciones y recibe las que le asignan.</p>
@@ -424,6 +425,21 @@ async function api(method,path,body){
  if(!r.ok){const er=new Error((j&&j.error)||('Error '+r.status));er.status=r.status;throw er}
  return j;
 }
+function AVH(e,cls,click){const u=USERS.find(x=>x.e===e);if(!u)return'';
+ return `<span class="av ${cls||''} ${click?'clk':''}" ${click?`onclick="pickFoto('${u.e}')" title="Cambiar foto"`:`title="${u.n} ${u.a}"`}>${u.f?`<img src="${u.f}" alt="">`:(u.n[0]||'')+(u.a[0]||'')}</span>`}
+function pickFoto(e){
+ const i=document.createElement('input');i.type='file';i.accept='image/*';
+ i.onchange=()=>{const f=i.files&&i.files[0];if(!f)return;const im=new Image(),url=URL.createObjectURL(f);
+  im.onload=async()=>{try{const S=128,c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d'),m=Math.min(im.width,im.height);
+   x.drawImage(im,(im.width-m)/2,(im.height-m)/2,m,m,0,0,S,S);URL.revokeObjectURL(url);await setFoto(e,c.toDataURL('image/jpeg',0.82))}catch(er){toast(er.message)}};
+  im.onerror=()=>toast('No se pudo leer la imagen');im.src=url};i.click();
+}
+async function setFoto(e,foto){
+ try{if(LIVE)await api('PUT','/usuarios/'+encodeURIComponent(e)+'/foto',{foto});
+  const u=USERS.find(x=>x.e===e);if(u)u.f=foto;
+  const pv=document.querySelector('#fotoPrev');if(pv)pv.innerHTML=AVH(e,'lg');
+  toast(foto?'Foto actualizada':'Foto quitada');render()}catch(er){toast(er.message)}
+}
 const uname=e=>{const u=USERS.find(x=>x.e===e);return u?u.n+' '+u.a:(e||'')};
 function mapRdp(a){
  const old=RDPS.find(x=>x.id===a.id);
@@ -432,7 +448,7 @@ function mapRdp(a){
   ahorroProy:+a.ahorro_proy,ahorroReal:+a.ahorro_real,medido:a.paso>=7,impacto:a.ultima_medicion?D(a.ultima_medicion):(a.paso>=7?TODAY:null),
   cerrado:a.cerrado,lider:uname(a.lider_email),liderEmail:a.lider_email,origen:a.origen,muda:a.muda,crs:[],justificacion:a.justificacion,
   lines:(a.perdidas||[]).map(p=>({id:p.id,mode:p.modo,cid:p.matriz_id,concepto:p.concepto,unidad:p.unidad,costo:+p.costo_unit,antes:+p.cant_antes,desp:p.cant_despues==null?null:+p.cant_despues,fuente:p.fuente})),
-  acc:(a.acciones||[]).map(x=>({id:x.codigo,_id:x.id,tipo:x.tipo,txt:x.texto,cr:x.causa_raiz||'—',resp:uname(x.resp_email),ini:D(x.inicio),comp:D(x.compromiso),av:x.avance,est:x.estado,costo:+x.inversion})),
+  acc:(a.acciones||[]).map(x=>({id:x.codigo,_id:x.id,tipo:x.tipo,txt:x.texto,cr:x.causa_raiz||'—',resp:uname(x.resp_email),respE:x.resp_email,ini:D(x.inicio),comp:D(x.compromiso),av:x.avance,est:x.estado,costo:+x.inversion})),
   pasos:old?old.pasos:{},meds:old?old.meds:[],_det:old?old._det:false};
  return r;
 }
@@ -441,7 +457,7 @@ async function loadLive(){
  const bs=await api('GET','/bootstrap');
  UI.me=bs.me;UI.rol=bs.me.rol;
  AREAS.length=0;AREAS.push(...bs.areas);
- USERS.length=0;USERS.push(...bs.usuarios.filter(x=>x.activo).map(x=>({n:x.nombre,a:x.apellido,ar:x.area,ro:x.rol,e:x.email})));
+ USERS.length=0;USERS.push(...bs.usuarios.filter(x=>x.activo).map(x=>({n:x.nombre,a:x.apellido,ar:x.area,ro:x.rol,e:x.email,f:x.foto||''})));
  MAT.length=0;MAT.push(...bs.matriz.filter(x=>x.activo).map(x=>({id:x.id,concepto:x.concepto,unidad:x.unidad,fuente:x.fuente,v:x.versiones.map(v=>({desde:D(v.desde),costo:+v.costo}))})));
  for(const k of Object.keys(ORG))delete ORG[k];
  for(const e of bs.estructura){if(!ORG[e.planta])ORG[e.planta]={};if(!ORG[e.planta][e.uet])ORG[e.planta][e.uet]=[];ORG[e.planta][e.uet].push(e.sector)}
@@ -518,7 +534,7 @@ function formCard(r){
  if(S.link==='ind')extra=`<div class="form" style="margin-top:10px"><div class="f2"><label class="lab">Indicador (unidad)</label><input id="ind_u" type="text" value="${esc2(r.ind.u)}"></div><div class="f2"><label class="lab">Línea base</label><input id="ind_b" type="number" step="any" value="${r.base}"></div><div class="f2"><label class="lab">Meta</label><input id="ind_m" type="number" step="any" value="${r.meta}"></div></div>`;
  if(S.link&&S.link.startsWith('acc:')){const t=S.link.slice(4),L=r.acc.filter(a=>a.tipo===t||(t==='Contramedida'&&false));
   extra=`<div style="margin-top:12px"><div class="rowh"><b>${t==='Contención'?'Medidas de contención':t==='Contramedida'?'Contramedidas':'Acciones de estandarización'}</b><span class="mut">${L.length} registradas</span><button class="btn ghost sp" onclick="openAcc('${t}')">+ Acción</button></div>
-   <div class="tw"><table><thead><tr><th>ID</th><th>Acción</th><th>Responsable</th><th>Compromiso</th><th>Avance</th><th>Estado</th></tr></thead><tbody>${L.map(a=>`<tr><td class="nw"><b>${a.id}</b></td><td>${a.txt}</td><td class="mut">${a.resp}</td><td class="nw">${fd(a.comp)}</td><td>${a.av}%</td><td>${tag(a.est,ESTC[a.est])}</td></tr>`).join('')||'<tr><td colspan="6" class="mut">Sin acciones de este tipo todavía.</td></tr>'}</tbody></table></div></div>`}
+   <div class="tw"><table><thead><tr><th>ID</th><th>Acción</th><th>Responsable</th><th>Compromiso</th><th>Avance</th><th>Estado</th></tr></thead><tbody>${L.map(a=>`<tr><td class="nw"><b>${a.id}</b></td><td>${a.txt}</td><td class="mut nw">${AVH(a.respE,'sm')}${a.resp}</td><td class="nw">${fd(a.comp)}</td><td>${a.av}%</td><td>${tag(a.est,ESTC[a.est])}</td></tr>`).join('')||'<tr><td colspan="6" class="mut">Sin acciones de este tipo todavía.</td></tr>'}</tbody></table></div></div>`}
  if(S.link==='med')extra=`<div style="margin-top:12px"><div class="rowh"><b>Mediciones del indicador</b><span class="mut">${(r.meds||[]).length} registradas</span><button class="btn ghost sp" onclick="openMed()">+ Medición</button></div>${(r.meds||[]).length?`<div class="tw"><table><thead><tr><th>Fecha</th><th class="r">Valor (${r.ind.u})</th><th>Nota</th></tr></thead><tbody>${r.meds.map(m=>`<tr><td>${fd(D(m.fecha))}</td><td class="r">${fv(+m.valor)}</td><td class="mut">${m.nota||''}</td></tr>`).join('')}</tbody></table></div>`:''}</div>`;
  const warn=S.f.some(x=>x[0]==='val')&&d.val==='nada'?'<div class="note w">Sin mejoras: conviene reformular el análisis con un A4 o A3. Cambiá la herramienta desde el botón de abajo conservando los datos.</div>':'';
  return `<div class="card"><h3>Formato ${HN[r.herr]} ${tag(FM.cod,HC[r.herr])} <small>se completa paso a paso · ${Math.round([1,2,3,4,5,6,7,8].reduce((s,k)=>s+pasoFill(r,k),0)/8*100)}% de los campos cargados</small></h3>
@@ -686,6 +702,7 @@ async function userSave(){
 function openUserEdit(e){
  const u=USERS.find(x=>x.e===e);
  openModal(`<h3 style="font-size:20px;margin:0 0 6px">${u.a} ${u.n}</h3><div class="mut" style="margin-bottom:10px">${u.e}</div>
+ <div class="rowh" style="margin-bottom:10px"><span id="fotoPrev">${AVH(u.e,'lg')}</span><button class="btn ghost" onclick="pickFoto('${u.e}')">Cambiar foto</button>${u.f?`<button class="btn ghost" onclick="setFoto('${u.e}','')">Quitar</button>`:''}</div>
  <div class="form"><div class="f2"><label class="lab">Área</label><select id="ea">${AREAS.map(a=>`<option ${a===u.ar?'selected':''}>${a}</option>`).join('')}</select></div><div class="f2"><label class="lab">Rol</label><select id="er"><option ${u.ro==='Usuario'?'selected':''}>Usuario</option><option ${u.ro==='Administrador'?'selected':''}>Administrador</option></select></div></div>
  <label class="sw" style="margin-top:10px"><input id="eb" type="checkbox"> Dar de baja (deja de tener acceso; se conserva su historial)</label>
  <div style="text-align:right;margin-top:12px"><button class="btn alt" onclick="userEditSave('${u.e}')">Guardar</button></div>`);
@@ -728,7 +745,7 @@ async function createRdp(){
  }catch(e){toast(e.message)}
 }
 
-function whoHTML(){return LIVE?`<div class="who"><span>${uname(UI.me.email)} · ${UI.rol}</span><button class="btn ghost" onclick="logout()">Salir</button></div>`:`<div class="who"><span>Ver como</span><select onchange="UI.rol=this.value;render()">${['Administrador','Usuario'].map(x=>`<option ${UI.rol===x?'selected':''}>${x}</option>`).join('')}</select></div>`}
+function whoHTML(){return LIVE?`<div class="who">${AVH(UI.me.email,'',1)}<span>${uname(UI.me.email)} · ${UI.rol}</span><button class="btn ghost" onclick="logout()">Salir</button></div>`:`<div class="who"><span>Ver como</span><select onchange="UI.rol=this.value;render()">${['Administrador','Usuario'].map(x=>`<option ${UI.rol===x?'selected':''}>${x}</option>`).join('')}</select></div>`}
 RDPS.forEach(r=>{r.pasos={};r.meds=[];if(r.paso>=1)r.pasos[1]={que:r.titulo,donde:r.loc.sector+' · '+r.loc.uet+' ('+r.loc.planta+')'}});
 
 /* ============ PASO 0 ============ */
