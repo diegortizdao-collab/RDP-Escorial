@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RDP · Resolución de Problemas · Escorial — Muestra</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#EAF4FB;--card:#fff;--ink:#14213D;--line:#D8E1EB;--mut:#667085;--navy:#0F5C8C;--navy2:#1778B5;--sky:#2E9BD6;--sky2:#8DC9EE;--ok:#22A06B;--warn:#F2A93B;--orange:#F28C28;--bad:#E5484D;--vio:#8E4EC6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px}
+.hdr{position:relative;display:flex;align-items:center;gap:16px;background:#fff;padding:14px 22px 14px 26px;border-bottom:1px solid var(--line)}
+.hdr .bar{position:absolute;left:0;top:0;bottom:0;width:8px;background:linear-gradient(var(--navy),var(--sky))}
+.eyebrow{font-size:12px;font-weight:700;color:var(--sky);text-transform:uppercase;letter-spacing:.08em}.eyebrow i{margin:0 8px;color:var(--line);font-style:normal}.eyebrow span{color:var(--mut)}
+h1{margin:2px 0 2px;font-size:24px;color:var(--navy)}.lead{color:var(--mut);font-size:13px}
+.hdr .logos{margin-left:auto}.hdr .logos img{height:34px;display:block}
+nav{display:flex;gap:6px;padding:10px 22px 0;background:#fff;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav button{border:0;background:transparent;padding:10px 16px;font:inherit;font-weight:700;color:var(--mut);cursor:pointer;border-bottom:3px solid transparent}
+nav button.on{color:var(--navy);border-bottom-color:var(--sky)}
+nav button:hover{color:var(--navy)}
+main{padding:16px 22px 30px;max-width:1500px;margin:0 auto}
+.banner{background:#FFF4E5;border:1px solid #F5D9A8;color:#7A4A00;border-radius:10px;padding:8px 14px;font-size:12.5px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(11,37,69,.05)}
+.card h3{margin:0 0 10px;font-size:15px;color:var(--navy);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card h3 small{font-weight:400;color:var(--mut);font-size:12px}
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.f{display:flex;flex-direction:column;gap:3px;min-width:128px;flex:1 1 128px;max-width:200px}
+.f label,.lab{font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}
+select,input[type=text],input[type=number],textarea{width:100%;padding:7px 9px;border:1px solid #C5D2E0;border-radius:8px;background:#fff;font:inherit;color:var(--ink)}
+select:focus,input:focus,textarea:focus{outline:2px solid var(--sky2);border-color:var(--sky)}
+.btn{border:0;border-radius:9px;padding:8px 14px;font:inherit;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--sky),var(--navy2))}
+.btn.alt{background:linear-gradient(135deg,#F7B25A,var(--orange))}.btn.ghost{background:#fff;color:var(--navy);border:1px solid #C5D2E0}
+.btn:hover{filter:brightness(1.07)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:14px}
+.kpi{border-radius:12px;padding:12px 14px;color:#fff}
+.kpi small{display:block;font-size:11px;font-weight:700;text-transform:uppercase;opacity:.92}.kpi b{font-size:28px;line-height:1.2;display:block}.kpi span{font-size:12px;opacity:.95;display:block}
+.flowwrap{overflow-x:auto}
+.flow{display:grid;grid-template-columns:repeat(9,minmax(86px,1fr));gap:8px;min-width:820px}
+.fbr{border-radius:8px 8px 0 0;color:#fff;font-weight:700;font-size:12px;text-align:center;padding:5px 4px}
+.fc{text-align:center;cursor:pointer;border-radius:10px;padding:6px 4px 8px;border:2px solid transparent}
+.fc:hover{background:#F3F8FC}.fc.sel{border-color:var(--navy);background:#F3F8FC}
+.fc .n{font-size:22px;font-weight:800}.fc .bw{height:96px;display:flex;align-items:flex-end;justify-content:center}.fc .bw div{width:70%;border-radius:6px 6px 0 0;min-height:3px}
+.fc .l{font-size:11.5px;font-weight:700;color:var(--ink);margin-top:5px}.fc .l i{font-style:normal;color:var(--mut);display:block;font-weight:400}
+.pdca{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.pdca div{flex:1 1 140px;border-radius:10px;padding:8px 12px;color:#fff;display:flex;align-items:baseline;gap:8px}
+.pdca b{font-size:24px}.pdca span{font-size:12px;opacity:.95}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px}
+.grid .card{margin:0}.ch{position:relative;height:250px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#F0F6FB;color:var(--navy);text-align:left;padding:8px 8px;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;position:sticky;top:0;white-space:nowrap}
+td{padding:7px 8px;border-top:1px solid var(--line);vertical-align:middle}
+tbody tr.rw{cursor:pointer}tbody tr.rw:hover td{background:#F3F8FC}
+.tw{overflow-x:auto}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;color:#fff;white-space:nowrap}
+.steps{display:inline-flex;gap:2px;vertical-align:middle}.steps i{width:11px;height:11px;border-radius:3px;background:#E3EAF1;display:block}
+.steps i.done{opacity:1}.steps i.cur{outline:2px solid var(--ink);outline-offset:1px}
+.pb{height:8px;background:#E3EAF1;border-radius:5px;overflow:hidden;min-width:70px}.pb div{height:100%;border-radius:5px}
+.mut{color:var(--mut)}.r{text-align:right}.nw{white-space:nowrap}
+.chip{display:inline-flex;align-items:center;gap:6px;background:#E3F1FA;color:var(--navy);font-weight:700;font-size:12px;border-radius:12px;padding:3px 10px;cursor:pointer}
+/* ficha */
+.big{display:grid;grid-template-columns:repeat(9,1fr);gap:6px;margin:8px 0 4px}
+.bs{border-radius:8px;padding:8px 4px;text-align:center;font-size:11.5px;font-weight:700;background:#EEF2F6;color:var(--mut);border:2px solid transparent}
+.bs b{display:block;font-size:16px}
+.bs.done{color:#fff}.bs.cur{color:#fff;border-color:var(--ink);box-shadow:0 0 0 2px #fff inset}
+.bandrow{display:grid;grid-template-columns:repeat(9,1fr);gap:6px}.bandrow div{text-align:center;font-size:11px;font-weight:700;color:#fff;padding:2px;border-radius:6px 6px 0 0}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:900px){.cols2{grid-template-columns:1fr}}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.kv div{background:#F5F9FC;border:1px solid var(--line);border-radius:10px;padding:8px 10px}.kv small{display:block;color:var(--mut);font-size:11px;font-weight:700;text-transform:uppercase}.kv b{font-size:17px}
+/* paso 0 */
+.tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.tool{position:relative;border:2px solid var(--line);border-radius:12px;padding:14px;cursor:pointer;background:#fff}
+.tool:hover{border-color:var(--sky2)}.tool.sel{border-color:var(--navy);background:#F3F8FC;box-shadow:0 0 0 3px #CFE6F6}
+.tool h4{margin:0 0 4px;font-size:18px;color:var(--navy)}.tool p{margin:4px 0;font-size:12.5px;color:#344054}
+.tool .rec{position:absolute;right:10px;top:-10px;background:var(--orange);color:#fff;font-size:11px;font-weight:800;padding:3px 10px;border-radius:10px}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.f2{display:flex;flex-direction:column;gap:3px}
+.note{border-left:4px solid var(--sky);background:#F3F8FC;padding:8px 12px;border-radius:6px;font-size:13px;margin-top:10px}
+.note.w{border-color:var(--orange);background:#FFF4E5}.note.ok{border-color:var(--ok);background:#EAF8F1}
+.tot{font-size:26px;font-weight:800;color:var(--navy)}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:10px;font-weight:600;display:none;z-index:9}
+#modal{position:fixed;inset:0;background:rgba(11,37,69,.5);display:none;align-items:center;justify-content:center;z-index:20;padding:16px}
+#modal .box{background:#fff;border-radius:16px;max-width:560px;width:100%;max-height:92vh;overflow:auto;padding:20px 22px;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+#modal .x{float:right;border:0;background:transparent;font-size:22px;cursor:pointer;color:var(--mut)}
+.sw{display:flex;align-items:center;gap:8px;cursor:pointer}.sw input{width:18px;height:18px}
+.who{margin-left:auto;display:flex;align-items:center;gap:8px;padding-bottom:6px}.who span{font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase}.who select{width:auto}
+.av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--sky),var(--navy));color:#fff;font-weight:800;display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex:none}
+.sub{display:flex;gap:8px;margin-bottom:12px}.sub button{border:1px solid #C5D2E0;background:#fff;border-radius:18px;padding:6px 16px;font:inherit;font-weight:700;color:var(--navy);cursor:pointer}.sub button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.mail{border:1px solid var(--line);border-radius:10px;background:#F8FAFC;padding:14px;font-size:13px}.mail hr{border:0;border-top:1px solid var(--line);margin:8px 0}
+.tfoot td{font-weight:800;background:#F0F6FB}
+.rowh{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.rowh .sp{margin-left:auto}
+footer{text-align:center;color:var(--mut);font-size:12px;padding:6px 0 22px}
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="bar"></div>
+  <div>
+    <div class="eyebrow">Escorial<i>|</i><span>Mejora Continua</span></div>
+    <h1>RDP · Resolución de Problemas</h1>
+    <div class="lead">Seguimiento PDCA, impacto y registro de acciones · A3 · A4 · 5 Porqués</div>
+  </div>
+  <div class="logos"><img src="__LOGO__" alt="escorial"></div>
+</header>
+<nav id="tabs"></nav>
+<main id="view"></main>
+<div id="toast"></div>
+<div id="modal"></div>
+<footer>Desarrollado por Mgter. Diego Ortiz — Líder de Mejora Continua | Consultor ISO</footer>
+
+<!--CONFIG-->
+<script>
+/* ============ CONSTANTES ============ */
+const TODAY=new Date('2026-11-17T12:00:00');
+const MES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const PASOS=['Selección','Clarificar','Desglosar','Objetivo','Causa raíz','Contramedidas','Implementar','Monitorear','Estandarizar'];
+const FASE=p=>p<=5?'P':p===6?'D':p===7?'C':'A';
+const FC={P:'#2E9BD6',D:'#F28C28',C:'#22A06B',A:'#8E4EC6'};
+const FN={P:'Planificar',D:'Hacer',C:'Verificar',A:'Actuar'};
+const HC={'A3':'#0F5C8C','A4':'#2E9BD6','5PQ':'#F28C28'};
+const HN={'A3':'A3','A4':'A4','5PQ':'5 Porqués'};
+const ORG={
+ 'Suipacha':{'UET 4':['Armado Gas','Armado Eléctrico','Calefones','Soldadura'],'UET 5':['Pintura','Prensa'],'Matricería':['Matricería'],'Mantenimiento':['Mantenimiento']},
+ '25 de Mayo':{'UET 1':['Cocinas','Prearmado'],'UET 2':['Welding','Enlozado','Gema'],'UET 3':['Corte','Estampado'],'Matricería':['Matricería'],'Mantenimiento':['Mantenimiento']}
+};
+const TIT={'Soldadura':'Scrap por soldadura defectuosa','Prensa':'Paradas por cambio de matriz','Pintura':'Rechazos por piel de naranja','Enlozado':'Defectos de enlozado en piezas','Cocinas':'Reclamos por puerta desalineada','Armado Gas':'Retrabajo por pérdida en conexión','Armado Eléctrico':'Fallas en prueba eléctrica','Calefones':'Rechazos en prueba de estanqueidad','Corte':'Desperdicio de chapa en corte','Estampado':'Rebabas en piezas estampadas','Welding':'Soldadura incompleta en bastidor','Gema':'Variación de espesor de recubrimiento','Prearmado':'Faltantes de componentes en kit','Matricería':'Desgaste prematuro de matrices','Mantenimiento':'Paradas no planificadas por falla eléctrica'};
+const IND=[{u:'% scrap',b:4.8,m:1.5},{u:'min parada/turno',b:38,m:12},{u:'% rechazo',b:6.5,m:2},{u:'reclamos/mes',b:9,m:2},{u:'% retrabajo',b:7,m:2.5}];
+const ORIG=['Indicador','Pareto','Impacto (seguridad/cliente)','Genba','Reclamo de cliente'];
+const LIDER=['Líder de UET','Téc. de Calidad','Supervisor de turno','Ing. de Procesos','Jefe de sector'];
+const CRS=['Falta de estándar de cambio','Herramental sin criterio de recambio','Sin control de detección en el puesto','Método de trabajo no estandarizado','Variación de materia prima'];
+const AC={cont:['Inspección 100% de la característica','Segregar y rotular material sospechoso','Verificación reforzada al inicio de turno'],
+ cm:['Rediseñar dispositivo de posicionamiento','Incorporar calibre pasa/no pasa','Actualizar frecuencia de recambio de herramental','Capacitar al personal en el nuevo método','Instalar sensor de detección','Ajustar parámetros de proceso y validar'],
+ est:['Actualizar hoja de trabajo estandarizado','Actualizar plan de control / lista de verificación'],
+ yok:['Replicar en líneas similares (Yokoten)','Compartir lecciones aprendidas en reunión de UET']};
+const _s=(a,f)=>a.reduce((t,x)=>t+f(x),0);
+const D=x=>new Date(x+'T12:00:00');
+/* Matriz de costos (valores de ejemplo tomados de la pantalla "Valores" de Kaizenio; la oficial la define Escorial) */
+const MAT=[
+ {id:1,concepto:'Aluminio',unidad:'Kg',fuente:'Control de Gestión',v:[{desde:D('2026-07-01'),costo:5553},{desde:D('2026-01-01'),costo:4720}]},
+ {id:2,concepto:'Chapa',unidad:'Kg',fuente:'Control de Gestión',v:[{desde:D('2026-07-01'),costo:1384},{desde:D('2026-01-01'),costo:1190}]},
+ {id:3,concepto:'Mano de Obra Directa',unidad:'Hs',fuente:'Control de Gestión',v:[{desde:D('2026-01-01'),costo:7650}]},
+ {id:4,concepto:'Mano de Obra Indirecta',unidad:'Hs',fuente:'Control de Gestión',v:[{desde:D('2026-01-01'),costo:15778}]},
+ {id:5,concepto:'Recambio de Producto',unidad:'U',fuente:'Post Venta',v:[{desde:D('2026-01-01'),costo:350000}]},
+ {id:6,concepto:'Servicio Técnico',unidad:'U',fuente:'Post Venta',v:[{desde:D('2026-01-01'),costo:60000}]}];
+const LIBRES=[{c:'Energía eléctrica',u:'kWh',costo:180},{c:'Horas de inspección extra',u:'Hs',costo:9200},{c:'Flete de retrabajo',u:'Viaje',costo:85000},{c:'Horas extra de supervisión',u:'Hs',costo:14500}];
+const costoAt=(c,d)=>(c.v.find(x=>x.desde<=d)||c.v[c.v.length-1]).costo;
+const vigente=c=>c.v[0];
+const MUDAS=['Defectos','Esperar','Movimientos','Traslados','Sobreproducción','Sobreproceso','Inventario','Ambiente','Seguridad'];
+const MUDAP=['Defectos','Defectos','Defectos','Defectos','Esperar','Esperar','Movimientos','Traslados','Sobreproceso','Sobreproceso','Inventario','Sobreproducción','Seguridad','Ambiente'];
+const MC=['#E5484D','#F28C28','#F2A93B','#2E9BD6','#8E4EC6','#0F5C8C','#22A06B','#5BB4E5','#98A2B3'];
+const AREAS=['Administración','Almacén','Calidad Central','Comercial','Comex','Compras','Ingeniería e Innovación','Ingeniería de Producto','Inyección y Mecanizado','Logística','Mantenimiento Central','Mantenimiento Edilicio','Marketing','Mejora Continua','Planificación','Post Venta','Producto','Producto Comercial','Proyectos','Recursos Humanos','Seguridad Patrimonial','Seguridad, Higiene y Medio Ambiente','Sistemas','Supply Chain','UET 1','UET 2','UET 3','UET 4','UET 5'];
+const USERS=[['Camila','Ferraro','Mejora Continua','Administrador'],['Tomás','Beltrán','Mejora Continua','Administrador'],['Lucía','Montenegro','UET 5','Usuario'],['Julián','Sosa','UET 4','Usuario'],['Agustina','Paredes','Calidad Central','Usuario'],['Nicolás','Vidal','UET 2','Usuario'],['Romina','Acosta','Mantenimiento Central','Usuario'],['Federico','Luna','UET 1','Usuario'],['Valeria','Cabrera','Seguridad, Higiene y Medio Ambiente','Usuario'],['Matías','Ibarra','UET 3','Usuario'],['Sofía','Herrera','Ingeniería de Producto','Usuario'],['Gonzalo','Peralta','Logística','Usuario']].map(([n,a,ar,ro])=>({n,a,ar,ro,e:(n[0]+a).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ /g,'')+'@escorial.com.ar'}));
+function recalc(r){r.P0=_s(r.lines,l=>l.antes*l.costo);r.ahorroProy=r.P0*(1-r.meta/r.base);r.ahorroReal=r.medido?r.P0*(1-r.actual/r.base):0;}
+const TIPOC={'Contención':'#F28C28','Contramedida':'#2E9BD6','Estandarización':'#8E4EC6','Yokoten':'#22A06B'};
+const ESTC={'Cerrada':'#22A06B','En curso':'#2E9BD6','Planificada':'#98A2B3','Vencida':'#E5484D'};
+
+/* ============ DATOS DE DEMOSTRACIÓN (simulados) ============ */
+function rng(s){return function(){s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const R=rng(20261117);const pick=(a,r=R)=>a[Math.floor(r()*a.length)];const btw=(a,b,r=R)=>a+r()*(b-a);
+const addD=(d,n)=>new Date(d.getTime()+n*864e5);
+const SECT=[];for(const p in ORG)for(const u in ORG[p])for(const s of ORG[p][u])SECT.push({planta:p,uet:u,sector:s});
+const RDPS=[];
+(function(){
+ const W=[2,2,2,2,3,3,4,4,5];const tot=W.reduce((a,b)=>a+b,0);
+ for(let i=0;i<30;i++){
+  const loc=pick(SECT);const x=R();const herr=x<.35?'5PQ':x<.75?'A4':'A3';
+  let y=R()*tot,paso=0;for(let k=0;k<W.length;k++){y-=W[k];if(y<=0){paso=k;break}}
+  const durF={'5PQ':.5,'A4':1,'A3':1.8}[herr];
+  const inicio=addD(TODAY,-(20+paso*22*durF+R()*30));
+  const ind=pick(IND);const base=ind.b*btw(.8,1.25),meta=ind.m*btw(.8,1.2);
+  const kL=1+Math.floor(R()*2.4),target=btw(8e6,120e6);
+  const lines=Array.from({length:kL},()=>{const std=R()<.75;const c=std?pick(MAT):null,L=std?null:pick(LIBRES);const costo=std?costoAt(c,inicio):L.costo;
+   return {mode:std?'std':'libre',cid:std?c.id:null,concepto:std?c.concepto:L.c,unidad:std?c.unidad:L.u,costo,antes:Math.max(1,Math.round(target/kL/costo)),fuente:std?'Matriz de costos':'Costo indirecto estimado'}});
+  const P0=_s(lines,l=>l.antes*l.costo);
+  const costo=Math.round(P0*btw(.02,.12)*(herr==='A3'?1.6:1)/1000)*1000;
+  const frac=[0,0,0,0,0,0,0,.7,.97][paso]*btw(.85,1.08);
+  const actual=base-Math.min(1.05,frac)*(base-meta);
+  const medido=paso>=7;
+  const impacto=medido?addD(TODAY,-(paso===7?btw(8,60):btw(30,120))):null;
+  const r={loc,herr,paso,inicio,ind,base,meta,actual,P0,costo,lines,muda:pick(MUDAP),medido,impacto,
+   cerrado:paso===8&&R()<.6,titulo:TIT[loc.sector],lider:pick(LIDER),origen:pick(ORIG),crs:[0,1,2].map(()=>pick(CRS)).filter((v,k,a)=>a.indexOf(v)===k)};
+  recalc(r);RDPS.push(r);
+ }
+ RDPS.sort((a,b)=>a.inicio-b.inicio);
+ RDPS.forEach((r,i)=>{r.id='RDP-'+String(i+1).padStart(3,'0');r.acc=genAcc(r,i);});
+})();
+function genAcc(r,i){
+ const q=rng(1000+i*77),pk=a=>pick(a,q),bt=(a,b)=>btw(a,b,q);const out=[];let n=1;
+ const add=(tipo,txt,ini,comp,av,costo)=>{const est=av>=100?'Cerrada':ini>TODAY&&av===0?'Planificada':comp<TODAY?'Vencida':'En curso';
+  out.push({id:'A-'+r.id.slice(-3)+'-'+String(n++).padStart(2,'0'),tipo,txt,cr:tipo==='Contramedida'?'CR'+(1+Math.floor(q()*r.crs.length)):'—',resp:pk(LIDER),ini,comp,av,est,costo:costo||0});};
+ if(r.paso>=1){const k=1+Math.floor(q()*2);for(let j=0;j<k;j++){const ini=addD(r.inicio,2+j*2);add('Contención',pk(AC.cont),ini,addD(ini,btw(7,14,q)),r.paso>=3?100:Math.round(bt(40,100)/10)*10);}}
+ if(r.paso>=5){const k={'5PQ':2,'A4':3,'A3':5}[r.herr]+Math.floor(q()*2);
+  for(let j=0;j<k;j++){let ini,comp,av;
+   if(r.paso===5){ini=addD(TODAY,bt(-3,20));comp=addD(ini,bt(15,45));av=0;}
+   else if(r.paso===6){ini=addD(TODAY,-bt(10,60));comp=addD(ini,bt(15,60));av=Math.round(bt(10,100)/10)*10;}
+   else{ini=addD(TODAY,-bt(60,160));comp=addD(ini,bt(15,45));av=100;}
+   add('Contramedida',pk(AC.cm),ini,comp,av,Math.round(btw(300,r.costo/Math.max(2,k)*2,q)/50)*50);}}
+ if(r.paso>=7){const ini=addD(TODAY,-bt(5,30));add('Estandarización',pk(AC.est),ini,addD(ini,bt(15,30)),r.paso===8?100:Math.round(bt(0,60)/10)*10);}
+ if(r.paso>=8){const ini=addD(TODAY,-bt(0,20));add('Yokoten',pk(AC.yok),ini,addD(ini,bt(10,40)),r.cerrado?100:40);}
+ return out;
+}
+const UI={tab:'dash',planta:'',uet:'',sector:'',herr:'',anio:'',mes:'',paso:null,sel:null,aTipo:'',aEst:'',rol:'Administrador',adm:'usr',fp:null,me:null};
+const P0={lines:[],tool:'',just:'',causa:0,alc:0,inv:0,cro:0,orig:'Indicador',exs:'Sí',cum:'Sí',est:'Sí',s:[3,3,3,3]};
+const CH={};
+const $=s=>document.querySelector(s);
+const fmtUS=n=>'$ '+Math.round(n).toLocaleString('es-AR');
+const fmtK=n=>Math.abs(n)>=1e6?'$ '+(n/1e6).toFixed(2).replace('.',',')+' M':'$ '+Math.round(n/1000).toLocaleString('es-AR')+' mil';
+const fd=d=>d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
+const fv=(n)=>n<20?n.toFixed(1).replace('.',','):Math.round(n).toLocaleString('es-AR');
+const sum=(a,f)=>a.reduce((s,x)=>s+f(x),0);
+const tag=(t,c)=>`<span class="tag" style="background:${c}">${t}</span>`;
+const stepsHTML=p=>'<span class="steps">'+PASOS.map((_,k)=>`<i class="${k<=p?'done':''} ${k===p?'cur':''}" style="${k<=p?'background:'+FC[FASE(k)]:''}" title="Paso ${k} · ${PASOS[k]}"></i>`).join('')+'</span>';
+
+/* ============ FILTROS ============ */
+function filtered(skipPaso){
+ return RDPS.filter(r=>(!UI.planta||r.loc.planta===UI.planta)&&(!UI.uet||r.loc.uet===UI.uet)&&(!UI.sector||r.loc.sector===UI.sector)&&(!UI.herr||r.herr===UI.herr)&&(!UI.anio||String(r.inicio.getFullYear())===UI.anio)&&(UI.mes===''||r.inicio.getMonth()===+UI.mes)&&(skipPaso||UI.paso===null||r.paso===UI.paso));
+}
+function opts(list,sel,all){return `<option value="">${all}</option>`+list.map(v=>`<option value="${v[0]}" ${String(v[0])===String(sel)?'selected':''}>${v[1]}</option>`).join('')}
+function setF(k,v){UI[k]=v;if(k==='planta'){UI.uet='';UI.sector='';}if(k==='uet')UI.sector='';UI.paso=null;renderDash();}
+function filtersHTML(){
+ const ps=Object.keys(ORG);
+ const us=[...new Set(SECT.filter(s=>!UI.planta||s.planta===UI.planta).map(s=>s.uet))];
+ const ss=[...new Set(SECT.filter(s=>(!UI.planta||s.planta===UI.planta)&&(!UI.uet||s.uet===UI.uet)).map(s=>s.sector))];
+ const as=[...new Set(RDPS.map(r=>r.inicio.getFullYear()))].sort();
+ const f=(l,k,list,all)=>`<div class="f"><label>${l}</label><select onchange="setF('${k}',this.value)">${opts(list,UI[k],all)}</select></div>`;
+ return `<div class="filters">
+  ${f('Planta','planta',ps.map(x=>[x,x]),'Todas')}${f('UET','uet',us.map(x=>[x,x]),'Todas')}${f('Sector','sector',ss.map(x=>[x,x]),'Todos')}
+  ${f('Herramienta','herr',[['A3','A3'],['A4','A4'],['5PQ','5 Porqués']],'Todas')}${f('Año','anio',as.map(x=>[x,x]),'Todos')}${f('Mes de inicio','mes',MES.map((m,i)=>[i,m]),'Todos')}
+  <button class="btn ghost" onclick="Object.assign(UI,{planta:'',uet:'',sector:'',herr:'',anio:'',mes:'',paso:null});renderDash()">Limpiar</button></div>`;
+}
+
+/* ============ DASHBOARD ============ */
+function renderDash(){
+ const L=filtered(),LS=filtered(true);
+ const acts=LS.flatMap(r=>r.acc);const venc=acts.filter(a=>a.est==='Vencida').length,abiertas=acts.filter(a=>a.est!=='Cerrada').length;
+ const proy=sum(LS,r=>r.ahorroProy),real=sum(LS,r=>r.ahorroReal),inv=sum(LS.filter(r=>r.medido),r=>r.costo);
+ const act=LS.filter(r=>!r.cerrado).length;
+ const cnt=p=>LS.filter(r=>r.paso===p).length;const fc={P:0,D:0,C:0,A:0};LS.forEach(r=>fc[FASE(r.paso)]++);
+ const mx=Math.max(1,...PASOS.map((_,p)=>cnt(p)));
+ const kp=(l,v,s,bg)=>`<div class="kpi" style="background:${bg}"><small>${l}</small><b>${v}</b><span>${s}</span></div>`;
+ $('#view').innerHTML=`
+ ${BAN(`<b>Muestra con datos de demostración (simulados).</b> Los problemas, ahorros y acciones que ves son generados para ilustrar el tablero; no son datos reales de Escorial.`)}
+ <div class="card">${filtersHTML()}</div>
+ <div class="kpis">
+  ${kp('RDP en curso',act,`de ${LS.length} · ${LS.length-act} cerrados`,'linear-gradient(135deg,#0F5C8C,#1778B5)')}
+  ${kp('Ahorro proyectado',fmtK(proy),'anual · si se logra la meta','linear-gradient(135deg,#2E9BD6,#5BB4E5)')}
+  ${kp('Ahorro realizado',fmtK(real),`anualizado · medido en ${LS.filter(r=>r.medido).length} RDP`,'linear-gradient(135deg,#1C8E5F,#22A06B)')}
+  ${kp('Neto vs. inversión',fmtK(real-inv),`inversión ${fmtK(inv)}`,'linear-gradient(135deg,#7A3FB0,#8E4EC6)')}
+  ${kp('Acciones vencidas',venc,`de ${abiertas} acciones abiertas`,venc?'linear-gradient(135deg,#D63B40,#E5484D)':'linear-gradient(135deg,#1C8E5F,#22A06B)')}
+ </div>
+ <div class="card"><h3>Estado de avance PDCA <small>Pasos 0–5 = P · paso 6 = D · paso 7 = C · paso 8 = A · click en un paso para filtrar la tabla</small></h3>
+  <div class="pdca">${['P','D','C','A'].map(k=>`<div style="background:${FC[k]}"><b>${fc[k]}</b><span>${k} · ${FN[k]}</span></div>`).join('')}</div>
+  <div class="flowwrap"><div class="flow">
+   <div class="fbr" style="background:${FC.P};grid-column:1/7">P · Planificar (pasos 0–5)</div><div class="fbr" style="background:${FC.D}">D</div><div class="fbr" style="background:${FC.C}">C</div><div class="fbr" style="background:${FC.A}">A</div>
+   ${PASOS.map((n,p)=>`<div class="fc ${UI.paso===p?'sel':''}" onclick="UI.paso=UI.paso===${p}?null:${p};renderDash()"><div class="n" style="color:${FC[FASE(p)]}">${cnt(p)}</div><div class="bw"><div style="height:${cnt(p)/mx*100}%;background:${FC[FASE(p)]}"></div></div><div class="l">${p} · ${n}</div></div>`).join('')}
+  </div></div></div>
+ <div class="grid" style="margin-bottom:14px">
+  <div class="card"><h3>RDP por herramienta</h3><div class="ch"><canvas id="c1"></canvas></div></div>
+  <div class="card"><h3>Ahorro por UET <small>proyectado vs. realizado</small></h3><div class="ch"><canvas id="c2"></canvas></div></div>
+  <div class="card"><h3>Pareto de ahorro proyectado <small>top 8 RDP</small></h3><div class="ch"><canvas id="c3"></canvas></div></div>
+  <div class="card"><h3>Fases PDCA por planta</h3><div class="ch"><canvas id="c4"></canvas></div></div>
+  <div class="card"><h3>Ahorro realizado acumulado <small>anualizado, por mes de impacto</small></h3><div class="ch"><canvas id="c5"></canvas></div></div>
+  <div class="card"><h3>Estado de las acciones</h3><div class="ch"><canvas id="c6"></canvas></div></div>
+  <div class="card"><h3>Tipo de pérdida (muda) <small>cantidad de RDP</small></h3><div class="ch"><canvas id="c9"></canvas></div></div>
+ </div>
+ <div class="card"><h3>Listado de RDP ${UI.paso!==null?`<span class="chip" onclick="UI.paso=null;renderDash()">Paso ${UI.paso} · ${PASOS[UI.paso]} ✕</span>`:''}<small>${L.length} resultados · click en una fila para abrir la ficha</small></h3>
+  <div class="tw"><table><thead><tr><th>ID</th><th>Problema</th><th>Planta · UET · Sector</th><th>Herramienta</th><th>Avance (pasos 0–8)</th><th>Fase</th><th class="r">Ahorro proy.</th><th class="r">Ahorro real</th><th>Acciones</th><th>Líder</th></tr></thead><tbody>
+  ${L.map(r=>{const v=r.acc.filter(a=>a.est==='Vencida').length,c=r.acc.filter(a=>a.est==='Cerrada').length;const f=FASE(r.paso);
+   return `<tr class="rw" onclick="openRdp('${r.id}')"><td class="nw"><b>${r.id}</b></td><td>${r.titulo}</td><td class="mut">${r.loc.planta} · ${r.loc.uet} · ${r.loc.sector}</td><td>${tag(HN[r.herr],HC[r.herr])}</td><td>${stepsHTML(r.paso)} <span class="mut">${r.paso}/8</span></td><td>${r.cerrado?tag('Cerrado','#667085'):tag(f+' · '+FN[f],FC[f])}</td><td class="r nw">${fmtK(r.ahorroProy)}</td><td class="r nw">${r.medido?'<b style="color:#1C8E5F">'+fmtK(r.ahorroReal)+'</b>':'<span class="mut">aún sin medir</span>'}</td><td class="nw">${c}/${r.acc.length}${v?` <span style="color:var(--bad);font-weight:700">· ${v} venc.</span>`:''}</td><td class="mut">${r.lider}</td></tr>`}).join('')||'<tr><td colspan="10" class="mut">Sin resultados para el filtro elegido.</td></tr>'}
+  </tbody></table></div></div>`;
+ drawCharts(LS,acts);
+}
+function mk(id,cfg){if(CH[id])CH[id].destroy();CH[id]=new Chart(document.getElementById(id),cfg)}
+function drawCharts(LS,acts){
+ Chart.defaults.font.family='Segoe UI,Roboto,Arial';Chart.defaults.color='#344054';
+ const base={responsive:true,maintainAspectRatio:false};
+ const h=['A3','A4','5PQ'].map(k=>LS.filter(r=>r.herr===k).length);
+ mk('c1',{type:'doughnut',data:{labels:['A3','A4','5 Porqués'],datasets:[{data:h,backgroundColor:[HC.A3,HC.A4,HC['5PQ']],borderWidth:2}]},options:{...base,cutout:'58%',plugins:{legend:{position:'right'}}}});
+ const uets=[...new Set(LS.map(r=>r.loc.planta.slice(0,3)+' · '+r.loc.uet))];
+ const g=k=>uets.map(u=>sum(LS.filter(r=>r.loc.planta.slice(0,3)+' · '+r.loc.uet===u),r=>r[k]));
+ mk('c2',{type:'bar',data:{labels:uets,datasets:[{label:'Proyectado',data:g('ahorroProy'),backgroundColor:'#8DC9EE'},{label:'Realizado',data:g('ahorroReal'),backgroundColor:'#22A06B'}]},options:{...base,indexAxis:'y',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtK(c.raw)}}},scales:{x:{ticks:{callback:v=>fmtK(v)}}}}});
+ const top=[...LS].sort((a,b)=>b.ahorroProy-a.ahorroProy).slice(0,8);const T=sum(LS,r=>r.ahorroProy)||1;let ac=0;
+ mk('c3',{data:{labels:top.map(r=>r.id),datasets:[{type:'bar',label:'Ahorro proy.',data:top.map(r=>r.ahorroProy),backgroundColor:'#0F5C8C',yAxisID:'y'},{type:'line',label:'% acumulado',data:top.map(r=>(ac+=r.ahorroProy,ac/T*100)),borderColor:'#F28C28',backgroundColor:'#F28C28',yAxisID:'y1',tension:.2}]},options:{...base,plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.type==='line'?c.raw.toFixed(0)+'%':fmtK(c.raw)}}},scales:{y:{ticks:{callback:v=>fmtK(v)}},y1:{position:'right',min:0,max:100,grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%'}}}}});
+ const pl=Object.keys(ORG).filter(p=>!UI.planta||p===UI.planta),pc=['#2E9BD6','#F28C28'];
+ mk('c4',{type:'radar',data:{labels:['P · Planificar','D · Hacer','C · Verificar','A · Actuar'],datasets:pl.map((p,i)=>({label:p,data:['P','D','C','A'].map(f=>LS.filter(r=>r.loc.planta===p&&FASE(r.paso)===f).length),borderColor:pc[i%2],backgroundColor:pc[i%2]+'33',pointBackgroundColor:pc[i%2]}))},options:{...base,plugins:{legend:{position:'bottom'}},scales:{r:{beginAtZero:true,ticks:{precision:0}}}}});
+ const mm=Array(11).fill(0);LS.filter(r=>r.impacto&&r.impacto.getFullYear()===2026).forEach(r=>mm[r.impacto.getMonth()]+=r.ahorroReal);let cu=0;
+ mk('c5',{type:'line',data:{labels:MES.slice(0,11),datasets:[{label:'Ahorro realizado acumulado',data:mm.map(v=>(cu+=v,cu)),borderColor:'#22A06B',backgroundColor:'#22A06B33',fill:true,tension:.3,pointRadius:3}]},options:{...base,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtK(c.raw)}}},scales:{y:{ticks:{callback:v=>fmtK(v)}}}}});
+ const es=['Cerrada','En curso','Planificada','Vencida'];
+ mk('c6',{type:'doughnut',data:{labels:es,datasets:[{data:es.map(e=>acts.filter(a=>a.est===e).length),backgroundColor:es.map(e=>ESTC[e]),borderWidth:2}]},options:{...base,cutout:'58%',plugins:{legend:{position:'right'}}}});
+ const mu=MUDAS.map(m=>LS.filter(r=>r.muda===m).length);
+ mk('c9',{type:'polarArea',data:{labels:MUDAS,datasets:[{data:mu,backgroundColor:MC.map(c=>c+'CC')}]},options:{...base,plugins:{legend:{position:'right'}},scales:{r:{ticks:{precision:0}}}}});
+}
+
+/* ============ FICHA ============ */
+function openRdp(id){UI.sel=id;UI.fp=null;UI.tab='ficha';UI.aTipo='';UI.aEst='';render();window.scrollTo(0,0)}
+function renderFicha(){
+ if(!RDPS.length){$('#view').innerHTML='<div class="card"><h3>Todavía no hay RDP</h3><div class="mut">Creá el primero desde «Nuevo RDP · Paso 0».</div></div>';return}
+ if(!UI.sel)UI.sel=(RDPS.find(r=>r.herr==='A3'&&r.paso===6)||RDPS[0]).id;
+ const r=RDPS.find(x=>x.id===UI.sel),f=FASE(r.paso);
+ if(LIVE&&!r._det){r._det=true;loadDetail(r)}
+ const gap=r.base-r.meta,closed=gap?Math.max(0,Math.min(100,(r.base-r.actual)/gap*100)):0;
+ const A=r.acc.filter(a=>(!UI.aTipo||a.tipo===UI.aTipo)&&(!UI.aEst||a.est===UI.aEst));
+ const neto=r.ahorroReal-r.costo;const pay=r.ahorroReal>0?(r.costo/r.ahorroReal*12):null;
+ $('#view').innerHTML=`
+ ${BAN(`<b>Muestra con datos de demostración (simulados).</b>`)}
+ <div class="card"><div class="filters"><div class="f" style="max-width:340px;flex:1 1 300px"><label>RDP</label><select onchange="UI.sel=this.value;UI.fp=null;renderFicha()">${RDPS.map(x=>`<option value="${x.id}" ${x.id===r.id?'selected':''}>${x.id} · ${x.titulo}</option>`).join('')}</select></div></div></div>
+ <div class="card"><h3>${r.id} · ${r.titulo} ${tag(HN[r.herr],HC[r.herr])} ${r.cerrado?tag('Cerrado','#667085'):tag(f+' · '+FN[f],FC[f])} ${tag('Muda: '+r.muda,MC[MUDAS.indexOf(r.muda)])}</h3>
+  <div class="mut" style="margin-bottom:8px">${r.loc.planta} · ${r.loc.uet} · ${r.loc.sector} &nbsp;|&nbsp; Líder: ${r.lider} &nbsp;|&nbsp; Inicio: ${fd(r.inicio)} &nbsp;|&nbsp; Origen: ${r.origen} (${r.ind.u})</div>
+  <div class="bandrow"><div style="background:${FC.P};grid-column:1/7">P · Planificar</div><div style="background:${FC.D}">D</div><div style="background:${FC.C}">C</div><div style="background:${FC.A}">A</div></div>
+  <div class="big">${PASOS.map((n,p)=>`<div class="bs ${p<r.paso?'done':p===r.paso?'cur':''}" style="${p<=r.paso?'background:'+FC[FASE(p)]:''}"><b>${p<r.paso?'✓':p}</b>${n}</div>`).join('')}</div>${pasoNav(r)}</div>
+ ${formCard(r)}
+ <div class="cols2">
+  <div class="card"><h3>Impacto del problema</h3>
+   <div class="kv"><div><small>Línea base</small><b>${fv(r.base)}</b> <span class="mut">${r.ind.u}</span></div><div><small>Meta</small><b>${fv(r.meta)}</b> <span class="mut">${r.ind.u}</span></div><div><small>Valor actual</small><b>${fv(r.actual)}</b> <span class="mut">${r.ind.u}</span></div></div>
+   <div style="margin:12px 0 4px" class="lab">Brecha cerrada: ${closed.toFixed(0)}% de la meta</div><div class="pb" style="height:12px"><div style="width:${closed}%;background:linear-gradient(90deg,#2E9BD6,#22A06B)"></div></div>
+   <div class="kv" style="margin-top:12px"><div><small>Pérdida anual base</small><b>${fmtK(r.P0)}</b></div><div><small>Ahorro proyectado</small><b style="color:var(--navy)">${fmtK(r.ahorroProy)}</b></div><div><small>Ahorro realizado</small><b style="color:#1C8E5F">${r.medido?fmtK(r.ahorroReal):'sin medir'}</b></div><div><small>Inversión</small><b>${fmtK(r.costo)}</b></div><div><small>Neto</small><b>${r.medido?fmtK(neto):'—'}</b></div><div><small>Recupero</small><b>${pay!==null?pay.toFixed(1).replace('.',',')+' meses':'—'}</b></div></div>
+   <div class="note">Ahorro = pérdida antes − pérdida después, con cantidades anualizadas y el costo unitario de la matriz. La cantidad «después» sale de la variación del indicador físico (${r.ind.u}): cantidad antes × valor actual / línea base.</div></div>
+  <div class="card"><h3>Evolución del indicador <small>${r.ind.u}</small></h3><div class="ch"><canvas id="c7"></canvas></div></div>
+ </div>
+ ${calcCard(r)}
+ <div class="card"><h3>Registro de acciones <small>${A.length} de ${r.acc.length}</small><button class="btn alt" style="margin-left:auto" onclick="openAcc()">+ Acción</button></h3>
+  <div class="filters" style="margin-bottom:10px"><div class="f"><label>Tipo</label><select onchange="UI.aTipo=this.value;renderFicha()">${opts(Object.keys(TIPOC).map(x=>[x,x]),UI.aTipo,'Todos')}</select></div><div class="f"><label>Estado</label><select onchange="UI.aEst=this.value;renderFicha()">${opts(Object.keys(ESTC).map(x=>[x,x]),UI.aEst,'Todos')}</select></div></div>
+  <div class="tw"><table><thead><tr><th>ID</th><th>Tipo</th><th>Acción</th><th>Causa raíz</th><th>Responsable</th><th>Inicio</th><th>Compromiso</th><th>Avance</th><th>Estado</th></tr></thead><tbody>
+  ${A.map(a=>`<tr><td class="nw"><b>${a.id}</b></td><td>${tag(a.tipo,TIPOC[a.tipo])}</td><td>${a.txt}</td><td class="mut nw">${a.cr==='—'?'—':a.cr+' · '+(r.crs[+a.cr.slice(2)-1]||'').slice(0,26)}</td><td class="mut">${a.resp}</td><td class="nw">${fd(a.ini)}</td><td class="nw">${fd(a.comp)}</td><td style="min-width:110px"><div class="pb"><div style="width:${a.av}%;background:${ESTC[a.est]}"></div></div><small class="mut">${a.av}%</small></td><td>${tag(a.est,ESTC[a.est])}</td></tr>`).join('')||'<tr><td colspan="9" class="mut">Aún no hay acciones en este paso del RDP.</td></tr>'}
+  </tbody></table></div>
+  <div class="note">Un único registro alimenta las tres tablas del A3 (contención, contramedidas e implementación). Cada contramedida queda ligada a la causa raíz que ataca. Sin pasos de aprobación: al asignar un responsable le llega un correo y la acción queda en curso.</div></div>`;
+ const n=10,imp=r.paso>=6?Math.round(n*.7):n;const q=rng(5+r.id.length*r.paso+r.paso);
+ const ser=Array.from({length:n},(_,k)=>{let v=r.base*(1+(q()-.5)*.08);if(r.medido&&k>=imp){const t=(k-imp+1)/(n-imp);v=r.base-(r.base-r.actual)*Math.min(1,t*1.1);}return +v.toFixed(2)});
+ const lab=Array.from({length:n},(_,k)=>fd(addD(r.inicio,(TODAY-r.inicio)/864e5*k/(n-1))).slice(0,5));
+ let S2=ser,L2=lab,n2=n;if(LIVE||(r.meds&&r.meds.length)){const mm=r.meds||[];S2=[+r.base.toFixed(2),...mm.map(m=>+m.valor)];L2=[fd(r.inicio).slice(0,5),...mm.map(m=>fd(D(m.fecha)).slice(0,5))];n2=S2.length}
+ drawBA(r);
+ mk('c7',{type:'line',data:{labels:L2,datasets:[{label:'Indicador',data:S2,borderColor:'#0F5C8C',backgroundColor:'#0F5C8C',tension:.25,pointRadius:3},{label:'Meta',data:Array(n2).fill(+r.meta.toFixed(2)),borderColor:'#22A06B',borderDash:[6,5],pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+}
+
+/* ============ MODALES ============ */
+function openModal(h){const m=$('#modal');m.innerHTML='<div class="box"><button class="x" onclick="closeModal()">✕</button>'+h+'</div>';m.style.display='flex';m.onclick=e=>{if(e.target===m)closeModal()}}
+function closeModal(){$('#modal').style.display='none'}
+const cur=()=>RDPS.find(x=>x.id===UI.sel);
+const iso=d=>d.toISOString().slice(0,10);
+
+/* ============ CALCULADORA DE IMPACTO (antes / después) ============ */
+
+/* ============ CREAR PÉRDIDA (estándar o libre) ============ */
+let PL={};
+function openPL(tgt){PL={tgt,std:true,cid:MAT[0].id,concepto:'',unidad:'',costo:0,cant:0,fuente:''};plRender()}
+const plCost=()=>PL.std?costoAt(MAT.find(x=>x.id==PL.cid),TODAY):(+PL.costo||0);
+function plUpd(){const e=$('#pltot');if(e)e.textContent=fmtUS((+PL.cant||0)*plCost())}
+function plRender(){
+ const c=MAT.find(x=>x.id==PL.cid);
+ openModal(`<h3 style="font-size:20px;margin:0 0 2px">Crear pérdida</h3><div class="mut" style="margin-bottom:12px">Completá la información de la pérdida (cantidades anuales).</div>
+ <label class="sw"><input type="checkbox" ${PL.std?'checked':''} onchange="PL.std=this.checked;plRender()"><b>Valores estándar</b><span class="mut">· matriz de costos de Escorial</span></label>
+ <div class="lab" style="margin-top:12px">1 · Concepto</div>
+ ${PL.std?`<select onchange="PL.cid=this.value;plRender()">${MAT.map(m=>`<option value="${m.id}" ${m.id==PL.cid?'selected':''}>${m.concepto}</option>`).join('')}</select><div class="mut" style="font-size:12px;margin-top:3px">Unidad: ${c.unidad} · vigente desde ${fd(vigente(c).desde)} · fuente: ${c.fuente} · el valor no se edita acá</div>`
+ :`<input type="text" maxlength="30" placeholder="¿Cuál es el concepto de la pérdida?" value="${PL.concepto}" oninput="PL.concepto=this.value"><div class="mut r" style="font-size:12px">máximo 30 caracteres</div>`}
+ <div class="form" style="margin-top:10px"><div class="f2"><label class="lab">2 · Cantidad anual</label><input type="number" min="0" placeholder="0" value="${PL.cant||''}" oninput="PL.cant=+this.value;plUpd()"></div>
+ <div class="f2"><label class="lab">Unidad</label>${PL.std?`<input type="text" disabled value="${c.unidad}">`:`<input type="text" maxlength="8" placeholder="Hs, Kg, U…" value="${PL.unidad}" oninput="PL.unidad=this.value">`}</div></div>
+ <div class="lab" style="margin-top:10px">3 · Pérdida unitaria ($)</div>
+ ${PL.std?`<input type="text" disabled value="${plCost().toLocaleString('es-AR')}">`:`<input type="number" min="0" placeholder="0" value="${PL.costo||''}" oninput="PL.costo=+this.value;plUpd()">
+ <div class="lab" style="margin-top:10px">Criterio de cálculo (queda registrado)</div><textarea rows="2" placeholder="Ej.: costo indirecto = horas de supervisión × costo hora indirecta" oninput="PL.fuente=this.value">${PL.fuente}</textarea>`}
+ <div class="lab" style="margin-top:12px">Pérdida total <span class="mut" style="text-transform:none;font-weight:400">· cálculo automático</span></div><div class="tot" id="pltot">${fmtUS((+PL.cant||0)*plCost())}</div>
+ <div style="text-align:right;margin-top:12px"><button class="btn alt" onclick="plSave()">Crear</button></div>`);
+}
+
+/* ============ ACCIÓN CON AVISO POR CORREO ============ */
+let AC_={};
+function openAcc(t){const r=cur();AC_={tipo:t||'Contramedida',txt:'',cr:'',resp:0,ini:iso(TODAY),comp:iso(addD(TODAY,14)),inv:0};
+ openModal(`<h3 style="font-size:20px;margin:0 0 2px">Nueva acción · ${r.id}</h3><div class="mut" style="margin-bottom:12px">Al asignarla, la persona recibe un correo. No hay pasos de aprobación.</div>
+ <div class="form"><div class="f2"><label class="lab">Tipo</label><select onchange="AC_.tipo=this.value">${Object.keys(TIPOC).map(t=>`<option ${t===AC_.tipo?'selected':''}>${t}</option>`).join('')}</select></div>
+ <div class="f2"><label class="lab">Responsable</label><select onchange="AC_.resp=+this.value">${USERS.map((u,i)=>`<option value="${i}">${u.n} ${u.a} · ${u.ar}</option>`).join('')}</select></div></div>
+ <div class="lab" style="margin-top:10px">Acción</div><textarea rows="2" placeholder="¿Qué hay que hacer?" oninput="AC_.txt=this.value"></textarea>
+ <div class="lab" style="margin-top:10px">Causa raíz que ataca</div><select onchange="AC_.cr=this.value"><option value="">— Sin vincular —</option>${r.crs.map((c,i)=>`<option value="CR${i+1}">CR${i+1} · ${c}</option>`).join('')}</select>
+ <div class="form" style="margin-top:10px"><div class="f2"><label class="lab">Inicio</label><input type="date" value="${AC_.ini}" onchange="AC_.ini=this.value"></div><div class="f2"><label class="lab">Compromiso</label><input type="date" value="${AC_.comp}" onchange="AC_.comp=this.value"></div><div class="f2"><label class="lab">Inversión ($)</label><input type="number" min="0" placeholder="0" oninput="AC_.inv=+this.value"></div></div>
+ <div style="text-align:right;margin-top:12px"><button class="btn alt" onclick="accSave()">Asignar y avisar</button></div>`)}
+
+/* ============ ADMINISTRACIÓN (usuarios y matriz de costos) ============ */
+function renderAdm(){
+ const sb=UI.adm;
+ $('#view').innerHTML=`${BAN(`<b>Muestra con datos de demostración.</b> Solo el rol Administrador ve esta sección. Los valores de la matriz son de ejemplo; la oficial la carga Escorial.`)}
+ <div class="sub"><button class="${sb==='usr'?'on':''}" onclick="UI.adm='usr';renderAdm()">Usuarios</button><button class="${sb==='val'?'on':''}" onclick="UI.adm='val';renderAdm()">Matriz de costos (Valores)</button></div>`+(sb==='usr'?admUsers():admVals());
+}
+function admUsers(){
+ return `<div class="card"><h3>Usuarios <small>${USERS.length} cargados</small><button class="btn alt" style="margin-left:auto" onclick="openUser()">+ Usuario</button></h3>
+ <div class="tw"><table><thead><tr><th>Usuario</th><th>Área</th><th>Rol</th><th>Acciones abiertas</th><th></th></tr></thead><tbody>
+ ${USERS.map((u,i)=>`<tr><td><div class="rowh"><span class="av">${u.n[0]}${u.a[0]}</span><div><b>${u.a} ${u.n}</b><br><span class="mut">${u.e}</span></div></div></td><td>${u.ar}</td><td>${tag(u.ro,u.ro==='Administrador'?'#0F5C8C':'#2E9BD6')}</td><td>${(i*5+3)%7}</td><td class="r"><button class="btn ghost" onclick="openUserEdit('${u.e}')">Editar</button></td></tr>`).join('')}
+ </tbody></table></div></div>
+ <div class="grid"><div class="card"><h3>Roles</h3>
+  <p><b>${tag('Usuario','#2E9BD6')}</b> Crea RDP, carga pérdidas (estándar o libres), registra acciones y recibe las que le asignan.</p>
+  <p><b>${tag('Administrador','#0F5C8C')}</b> Todo lo del Usuario, más: da de alta/baja/modifica usuarios, mantiene la matriz de costos y las áreas.</p>
+  <div class="note">Dos roles, sin Evaluador ni aprobaciones intermedias. El alta de un usuario le envía un correo de invitación.</div></div>
+ <div class="card"><h3>Áreas de Escorial <small>${AREAS.length}</small></h3><div style="display:flex;flex-wrap:wrap;gap:6px">${AREAS.map(a=>`<span class="chip" style="cursor:default">${a}</span>`).join('')}</div>
+  <div class="note">Se usan para asignar personas. La ubicación del RDP (Planta · UET · Sector) sigue segmentando el dashboard.</div></div></div>`;
+}
+function openUser(){
+ openModal(`<h3 style="font-size:20px;margin:0 0 2px">Crear usuario</h3><div class="mut" style="margin-bottom:12px">Alta de una persona en la plataforma.</div>
+ <div class="form"><div class="f2"><label class="lab">Nombre</label><input id="un" type="text"></div><div class="f2"><label class="lab">Apellido</label><input id="ua" type="text"></div></div>
+ <div class="lab" style="margin-top:10px">Email</div><input id="ue" type="text" placeholder="nombre@escorial.com.ar">
+ <div class="form" style="margin-top:10px"><div class="f2"><label class="lab">Área</label><select id="uar">${AREAS.map(a=>`<option>${a}</option>`).join('')}</select></div><div class="f2"><label class="lab">Rol</label><select id="uro"><option>Usuario</option><option>Administrador</option></select></div></div>
+ <div style="text-align:right;margin-top:12px"><button class="btn alt" onclick="userSave()">Crear</button></div>`)}
+function admVals(){
+ return `<div class="card"><h3>Matriz de costos <small>conceptos de uso frecuente para definir pérdidas o inversiones</small><button class="btn alt" style="margin-left:auto" onclick="openVal()">+ Valor</button></h3>
+ <div class="tw"><table><thead><tr><th>Concepto</th><th>Unidad</th><th class="r">Costo unitario vigente</th><th>Vigente desde</th><th>Fuente</th><th>Historial</th><th></th></tr></thead><tbody>
+ ${MAT.map(m=>`<tr><td><b>${m.concepto}</b></td><td>${m.unidad}</td><td class="r"><b>${fmtUS(vigente(m).costo)}</b></td><td>${fd(vigente(m).desde)}</td><td class="mut">${m.fuente}</td><td class="mut">${m.v.length>1?m.v.slice(1).map(v=>fmtUS(v.costo)+' ('+fd(v.desde)+')').join(' · '):'—'}</td><td class="r"><button class="btn ghost" onclick="openVal(${m.id})">Actualizar costo</button></td></tr>`).join('')}
+ </tbody></table></div>
+ <div class="note">Cada cambio de costo crea una <b>versión con fecha de vigencia</b> (no pisa la anterior). Cada pérdida guarda el costo vigente al momento de cargarla, así los RDP ya cerrados conservan su cálculo. Los conceptos libres no pasan por la matriz.</div></div>`;
+}
+function openVal(id){
+ const m=id?MAT.find(x=>x.id===id):null;
+ openModal(`<h3 style="font-size:20px;margin:0 0 2px">${m?'Actualizar costo · '+m.concepto:'Nuevo valor'}</h3><div class="mut" style="margin-bottom:12px">${m?'Se agrega una versión nueva con su fecha de vigencia.':'Concepto de uso frecuente para definir pérdidas o inversiones.'}</div>
+ <div class="form"><div class="f2"><label class="lab">Concepto</label><input id="vc" type="text" maxlength="30" ${m?'disabled value="'+m.concepto+'"':''}></div><div class="f2"><label class="lab">Unidad</label><input id="vu" type="text" maxlength="8" placeholder="Kg, Hs, U…" ${m?'disabled value="'+m.unidad+'"':''}></div>
+ <div class="f2"><label class="lab">Costo unitario ($)</label><input id="vk" type="number" min="0"></div><div class="f2"><label class="lab">Vigente desde</label><input id="vd" type="date" value="${iso(TODAY)}"></div></div>
+ <div class="lab" style="margin-top:10px">Fuente</div><input id="vf" type="text" placeholder="Ej.: Control de Gestión" value="${m?m.fuente:''}">
+ <div style="text-align:right;margin-top:12px"><button class="btn alt" onclick="valSave(${id||0})">Guardar</button></div>`)}
+
+/* ============ CONEXIÓN CON LA API (modo real) / MODO DEMO ============ */
+const CFG=window.RDP_CONFIG||{};const LIVE=!!CFG.API_URL;
+const BAN=h=>LIVE?'':'<div class="banner">'+h+'</div>';
+let CRED={email:'',key:''};
+try{CRED=JSON.parse(localStorage.getItem('rdp_cred')||'{}')||{}}catch(e){}
+async function api(method,path,body){
+ const h={'Content-Type':'application/json'};
+ if((CFG.AUTH||'pilot')==='pilot'){h['X-App-Key']=CRED.key||'';h['X-User-Email']=CRED.email||''}
+ else if(typeof CFG.getToken==='function'){h['Authorization']='Bearer '+await CFG.getToken()}
+ const r=await fetch(CFG.API_URL.replace(/\/$/,'')+path,{method,headers:h,body:body===undefined?undefined:JSON.stringify(body)});
+ let j=null;try{j=await r.json()}catch(e){}
+ if(!r.ok){const er=new Error((j&&j.error)||('Error '+r.status));er.status=r.status;throw er}
+ return j;
+}
+const uname=e=>{const u=USERS.find(x=>x.e===e);return u?u.n+' '+u.a:(e||'')};
+function mapRdp(a){
+ const old=RDPS.find(x=>x.id===a.id);
+ const r={id:a.id,titulo:a.titulo,loc:{planta:a.planta,uet:a.uet,sector:a.sector},herr:a.herramienta,paso:a.paso,inicio:D(a.inicio),
+  ind:{u:a.indicador_unidad||'',b:+a.linea_base,m:+a.meta},base:+a.linea_base,meta:+a.meta,actual:+a.actual,P0:+a.perdida_base,costo:+a.inversion,
+  ahorroProy:+a.ahorro_proy,ahorroReal:+a.ahorro_real,medido:a.paso>=7,impacto:a.ultima_medicion?D(a.ultima_medicion):(a.paso>=7?TODAY:null),
+  cerrado:a.cerrado,lider:uname(a.lider_email),liderEmail:a.lider_email,origen:a.origen,muda:a.muda,crs:[],justificacion:a.justificacion,
+  lines:(a.perdidas||[]).map(p=>({id:p.id,mode:p.modo,cid:p.matriz_id,concepto:p.concepto,unidad:p.unidad,costo:+p.costo_unit,antes:+p.cant_antes,desp:p.cant_despues==null?null:+p.cant_despues,fuente:p.fuente})),
+  acc:(a.acciones||[]).map(x=>({id:x.codigo,_id:x.id,tipo:x.tipo,txt:x.texto,cr:x.causa_raiz||'—',resp:uname(x.resp_email),ini:D(x.inicio),comp:D(x.compromiso),av:x.avance,est:x.estado,costo:+x.inversion})),
+  pasos:old?old.pasos:{},meds:old?old.meds:[],_det:old?old._det:false};
+ return r;
+}
+function putRdp(a){const r=mapRdp(a),i=RDPS.findIndex(x=>x.id===r.id);if(i>=0)RDPS[i]=r;else RDPS.push(r);return r}
+async function loadLive(){
+ const bs=await api('GET','/bootstrap');
+ UI.me=bs.me;UI.rol=bs.me.rol;
+ AREAS.length=0;AREAS.push(...bs.areas);
+ USERS.length=0;USERS.push(...bs.usuarios.filter(x=>x.activo).map(x=>({n:x.nombre,a:x.apellido,ar:x.area,ro:x.rol,e:x.email})));
+ MAT.length=0;MAT.push(...bs.matriz.filter(x=>x.activo).map(x=>({id:x.id,concepto:x.concepto,unidad:x.unidad,fuente:x.fuente,v:x.versiones.map(v=>({desde:D(v.desde),costo:+v.costo}))})));
+ for(const k of Object.keys(ORG))delete ORG[k];
+ for(const e of bs.estructura){if(!ORG[e.planta])ORG[e.planta]={};if(!ORG[e.planta][e.uet])ORG[e.planta][e.uet]=[];ORG[e.planta][e.uet].push(e.sector)}
+ SECT.length=0;for(const p in ORG)for(const u in ORG[p])for(const s of ORG[p][u])SECT.push({planta:p,uet:u,sector:s});
+ const L=await api('GET','/rdp');RDPS.length=0;L.forEach(a=>RDPS.push(mapRdp(a)));
+ UI.sel=RDPS.length?RDPS[0].id:null;
+}
+async function loadDetail(r){
+ try{const d=await api('GET','/rdp/'+r.id);r.pasos={};(d.pasos||[]).forEach(p=>r.pasos[p.paso]=p.datos);r.meds=d.mediciones||[];r._det=true;if(UI.tab==='ficha'&&UI.sel===r.id)renderFicha()}catch(e){toast(e.message)}
+}
+function loginView(msg){
+ $('#tabs').innerHTML='';
+ $('#view').innerHTML=`<div class="card" style="max-width:460px;margin:30px auto"><h3>Ingresar a RDP · Escorial</h3>
+  ${msg?`<div class="note w">${msg}</div>`:''}
+  <div class="f2" style="margin-top:10px"><label class="lab">Correo de Escorial</label><input id="lg_e" type="text" value="${CRED.email||''}" placeholder="nombre@escorial.com.ar"></div>
+  <div class="f2" style="margin-top:10px"><label class="lab">Clave de acceso (piloto)</label><input id="lg_k" type="password"></div>
+  <div style="margin-top:14px"><button class="btn" onclick="doLogin()">Ingresar</button></div>
+  <div class="note">Modo piloto. Con el inicio de sesión de Microsoft (Entra ID) esta pantalla desaparece.</div></div>`;
+}
+async function doLogin(){
+ CRED={email:$('#lg_e').value.trim().toLowerCase(),key:$('#lg_k').value};
+ try{localStorage.setItem('rdp_cred',JSON.stringify(CRED))}catch(e){}
+ boot();
+}
+function logout(){CRED={email:'',key:''};try{localStorage.removeItem('rdp_cred')}catch(e){}boot()}
+async function boot(){
+ if(!LIVE){render();return}
+ if((CFG.AUTH||'pilot')==='pilot'&&(!CRED.email||!CRED.key)){loginView();return}
+ try{await loadLive();const hm=(location.hash||'').match(/rdp=([A-Z0-9-]+)/);if(hm&&RDPS.find(x=>x.id===hm[1])){UI.sel=hm[1];UI.tab='ficha'}render()}catch(e){loginView(e.status===401||e.status===403?e.message:'No se pudo conectar con la API: '+e.message)}
+}
+
+/* ============ FORMATOS A3 · A4 · 5 PORQUÉS (campos por paso) ============ */
+const W5H2=[['que','¿Qué? · el problema','area'],['donde','¿Dónde?','text'],['cuando','¿Cuándo?','text'],['quien','¿Quién?','text'],['cuanto','¿Cuánto?','text'],['como','¿Cómo se detectó?','text'],['porque','¿Por qué es un problema?','area']];
+const ISH=[['mano','Mano de obra','area'],['maq','Máquina','area'],['met','Método','area'],['mat','Material','area'],['med','Medición','area'],['amb','Medio ambiente','area']];
+const PQ=(p)=>[1,2,3,4,5].map(i=>[p+i,'¿Por qué? '+i,'text']).concat([[p+'raiz','Causa raíz','area']]);
+const VALID=[['','— Elegí —'],['total','Mejoró totalmente → estandarizar y compartir'],['parcial','Mejoró parcialmente → reformular el 5 Porqués'],['nada','Sin mejoras → analizar con A4 / A3']];
+const FORMS={
+ A3:{cod:'FR-MCO-010',p:{
+  1:{t:'Clarificar el problema (5W + 2H)',f:W5H2,link:'acc:Contención'},
+  2:{t:'Desglosar el problema',f:[['dg','DG · Desglose general (¿dónde se concentra? Pareto)','area'],['pp','PP · Punto prioritario','area'],['po','PO · Punto de ocurrencia (dónde y cuándo ocurre)','area']]},
+  3:{t:'Establecer el objetivo',f:[['obj','Objetivo (qué, cuánto y para cuándo)','area'],['fecha','Fecha objetivo','date']],link:'ind'},
+  4:{t:'Análisis de causa raíz (Ishikawa + 5 Porqués)',f:ISH.concat(PQ('a'))},
+  5:{t:'Contramedidas',f:[['crit','Criterio de selección (velocidad · efectividad · costo)','area']],link:'acc:Contramedida'},
+  6:{t:'Implementar',f:[['nota','Observaciones de la implementación','area']],link:'acc:Contramedida'},
+  7:{t:'Monitorear los resultados',f:[['res','Resultado frente a la meta','area'],['concl','Conclusión: ¿se logró el objetivo?','area']],link:'med'},
+  8:{t:'Estandarizar y compartir',f:[['est','Estándar actualizado (documento / código)','text'],['yok','Yokoten · dónde más se replica','area'],['lec','Lecciones aprendidas','area']],link:'acc:Estandarización'}}},
+ A4:{cod:'FR-MCO-004',p:{
+  1:{t:'Definir el problema (5W + 2H) y contención',f:W5H2,link:'acc:Contención'},
+  2:{t:'Desglosar el problema',f:[['dg','Desglose: ¿dónde se concentra el problema?','area']]},
+  3:{t:'Objetivo',f:[['obj','Objetivo (qué, cuánto y para cuándo)','area']],link:'ind'},
+  4:{t:'Causa raíz (Ishikawa + 5 Porqués)',f:ISH.concat(PQ('a'))},
+  5:{t:'Contramedidas',f:[['crit','Criterio de selección','area']],link:'acc:Contramedida'},
+  6:{t:'Implementar',f:[['nota','Observaciones','area']],link:'acc:Contramedida'},
+  7:{t:'Confirmar y validar',f:[['res','Resultado frente a la meta','area'],['concl','Validación: ¿se logró el objetivo?','area']],link:'med'},
+  8:{t:'Estandarizar y compartir',f:[['est','Estándar actualizado','text'],['yok','Yokoten · dónde más se replica','area'],['lec','Lecciones aprendidas','area']],link:'acc:Estandarización'}}},
+ '5PQ':{cod:'FR-MCO-035',p:{
+  1:{t:'01 · Definir el problema',f:[['que','Problema','area'],['porque','¿Por qué es un problema?','area'],['cuanto','¿Cuánto?','text'],['donde','¿Dónde?','text']],link:'acc:Contención'},
+  2:{t:'Desglose',f:[],nota:'El formato 5 Porqués no desglosa: se define en el paso 1 y se analiza en el paso 4.'},
+  3:{t:'Objetivo',f:[['obj','Objetivo (qué y cuánto)','area']],link:'ind'},
+  4:{t:'02 · Causa raíz (dos cadenas de 5 Porqués)',f:PQ('a').map(x=>[x[0],x[1]+' (cadena 1)',x[2]]).concat(PQ('b').map(x=>[x[0],x[1]+' (cadena 2)',x[2]]))},
+  5:{t:'Contramedidas',f:[],link:'acc:Contramedida'},
+  6:{t:'03 · Avance de contramedidas',f:[['nota','Observaciones','area']],link:'acc:Contramedida'},
+  7:{t:'04 · Validar resultados',f:[['val','Resultado','sel',VALID],['concl','Comentario','area']],link:'med'},
+  8:{t:'Estandarizar y compartir',f:[['est','Estándar actualizado','text'],['yok','Se comparte con','area']],link:'acc:Estandarización'}}}};
+const pasoFill=(r,n)=>{const F=(FORMS[r.herr].p[n]||{f:[]}).f,d=(r.pasos||{})[n]||{};return F.length?F.filter(x=>String(d[x[0]]||'').trim()).length/F.length:0};
+function formCard(r){
+ const FM=FORMS[r.herr],n=UI.fp||Math.max(1,Math.min(8,r.paso)),S=FM.p[n]||{t:'',f:[]},d=(r.pasos||{})[n]||{};
+ const chips=[1,2,3,4,5,6,7,8].map(k=>{const q=pasoFill(r,k),ph=FASE(k);return `<button class="${k===n?'on':''}" onclick="UI.fp=${k};renderFicha()" style="${k===n?'background:'+FC[ph]+';border-color:'+FC[ph]:''}">${k}${q>=1?' ✓':q>0?' ◐':''}</button>`}).join('');
+ const fld=x=>{const [k,l,t,o]=x,v=d[k]||'';
+  if(t==='area')return `<div class="f2"><label class="lab">${l}</label><textarea rows="2" oninput="fpSet(${n},'${k}',this.value)">${esc2(v)}</textarea></div>`;
+  if(t==='sel')return `<div class="f2"><label class="lab">${l}</label><select onchange="fpSet(${n},'${k}',this.value);renderFicha()">${o.map(([a,b])=>`<option value="${a}" ${v===a?'selected':''}>${b}</option>`).join('')}</select></div>`;
+  return `<div class="f2"><label class="lab">${l}</label><input type="${t==='date'?'date':'text'}" value="${esc2(v)}" oninput="fpSet(${n},'${k}',this.value)"></div>`};
+ let extra='';
+ if(S.link==='ind')extra=`<div class="form" style="margin-top:10px"><div class="f2"><label class="lab">Indicador (unidad)</label><input id="ind_u" type="text" value="${esc2(r.ind.u)}"></div><div class="f2"><label class="lab">Línea base</label><input id="ind_b" type="number" step="any" value="${r.base}"></div><div class="f2"><label class="lab">Meta</label><input id="ind_m" type="number" step="any" value="${r.meta}"></div></div>`;
+ if(S.link&&S.link.startsWith('acc:')){const t=S.link.slice(4),L=r.acc.filter(a=>a.tipo===t||(t==='Contramedida'&&false));
+  extra=`<div style="margin-top:12px"><div class="rowh"><b>${t==='Contención'?'Medidas de contención':t==='Contramedida'?'Contramedidas':'Acciones de estandarización'}</b><span class="mut">${L.length} registradas</span><button class="btn ghost sp" onclick="openAcc('${t}')">+ Acción</button></div>
+   <div class="tw"><table><thead><tr><th>ID</th><th>Acción</th><th>Responsable</th><th>Compromiso</th><th>Avance</th><th>Estado</th></tr></thead><tbody>${L.map(a=>`<tr><td class="nw"><b>${a.id}</b></td><td>${a.txt}</td><td class="mut">${a.resp}</td><td class="nw">${fd(a.comp)}</td><td>${a.av}%</td><td>${tag(a.est,ESTC[a.est])}</td></tr>`).join('')||'<tr><td colspan="6" class="mut">Sin acciones de este tipo todavía.</td></tr>'}</tbody></table></div></div>`}
+ if(S.link==='med')extra=`<div style="margin-top:12px"><div class="rowh"><b>Mediciones del indicador</b><span class="mut">${(r.meds||[]).length} registradas</span><button class="btn ghost sp" onclick="openMed()">+ Medición</button></div>${(r.meds||[]).length?`<div class="tw"><table><thead><tr><th>Fecha</th><th class="r">Valor (${r.ind.u})</th><th>Nota</th></tr></thead><tbody>${r.meds.map(m=>`<tr><td>${fd(D(m.fecha))}</td><td class="r">${fv(+m.valor)}</td><td class="mut">${m.nota||''}</td></tr>`).join('')}</tbody></table></div>`:''}</div>`;
+ const warn=S.f.some(x=>x[0]==='val')&&d.val==='nada'?'<div class="note w">Sin mejoras: conviene reformular el análisis con un A4 o A3. Cambiá la herramienta desde el botón de abajo conservando los datos.</div>':'';
+ return `<div class="card"><h3>Formato ${HN[r.herr]} ${tag(FM.cod,HC[r.herr])} <small>se completa paso a paso · ${Math.round([1,2,3,4,5,6,7,8].reduce((s,k)=>s+pasoFill(r,k),0)/8*100)}% de los campos cargados</small></h3>
+  <div class="sub" style="flex-wrap:wrap">${chips}</div>
+  <div class="mut" style="margin-bottom:8px"><b>Paso ${n} · ${S.t}</b> ${tag(FASE(n)+' · '+FN[FASE(n)],FC[FASE(n)])}</div>
+  ${S.nota?`<div class="note">${S.nota}</div>`:''}
+  <div class="form">${S.f.map(fld).join('')}</div>${warn}${extra}
+  <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" onclick="saveFormPaso(${n})">Guardar paso ${n}</button></div></div>`;
+}
+const esc2=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+function fpSet(n,k,v){const r=cur();r.pasos=r.pasos||{};r.pasos[n]=r.pasos[n]||{};r.pasos[n][k]=v;r._dirty=n}
+async function saveFormPaso(n){
+ const r=cur();const S=(FORMS[r.herr].p[n]||{});
+ try{
+  if(S.link==='ind'){const u=$('#ind_u').value,b=+$('#ind_b').value,m=+$('#ind_m').value;
+   if(LIVE){putRdp(await api('PATCH','/rdp/'+r.id,{indicador_unidad:u,linea_base:b,meta:m}))}else{r.ind.u=u;r.base=b;r.meta=m;r.actual=r.paso<7?b:r.actual;recalc(r)}}
+  if(LIVE)await api('PUT','/rdp/'+r.id+'/paso/'+n,{datos:(cur().pasos||{})[n]||{}});
+  toast('Paso '+n+' guardado');renderFicha();
+ }catch(e){toast(e.message)}
+}
+function pasoNav(r){
+ return `<div class="rowh" style="margin-top:10px"><button class="btn ghost" ${r.paso<=0?'disabled':''} onclick="movePaso(-1)">◀ Paso anterior</button><button class="btn" ${r.paso>=8?'disabled':''} onclick="movePaso(1)">Avanzar al paso ${Math.min(8,r.paso+1)} ▶</button>
+  <button class="btn ghost" onclick="openHerr()">Cambiar herramienta</button>${r.cerrado?'':`<button class="btn ghost sp" ${r.paso<8?'disabled':''} onclick="cerrarRdp()">Cerrar RDP</button>`}</div>`;
+}
+async function movePaso(d){
+ const r=cur(),n=Math.max(0,Math.min(8,r.paso+d));
+ try{if(LIVE)putRdp(await api('PATCH','/rdp/'+r.id,{paso:n}));else{r.paso=n;r.medido=n>=7;recalc(r)}UI.fp=Math.max(1,n);renderFicha();toast('RDP en el paso '+n+' · '+FN[FASE(n)])}catch(e){toast(e.message)}
+}
+async function cerrarRdp(){const r=cur();try{if(LIVE)putRdp(await api('PATCH','/rdp/'+r.id,{cerrado:true}));else r.cerrado=true;renderFicha();toast('RDP cerrado')}catch(e){toast(e.message)}}
+function openHerr(){
+ const r=cur();
+ openModal(`<h3 style="font-size:20px;margin:0 0 6px">Cambiar herramienta</h3><div class="mut" style="margin-bottom:10px">Se conservan todos los datos cargados (por ejemplo, un 5 Porqués sin mejoras se escala a A4 o A3).</div>
+ <select id="hn">${['A3','A4','5PQ'].map(h=>`<option value="${h}" ${h===r.herr?'selected':''}>${HN[h]} · ${FORMS[h].cod}</option>`).join('')}</select>
+ <div style="text-align:right;margin-top:12px"><button class="btn alt" onclick="herrSave()">Cambiar</button></div>`);
+}
+async function herrSave(){const r=cur(),h=$('#hn').value;try{if(LIVE)putRdp(await api('PATCH','/rdp/'+r.id,{herramienta:h}));else r.herr=h;closeModal();renderFicha();toast('Herramienta: '+HN[h])}catch(e){toast(e.message)}}
+function openMed(){
+ const r=cur();
+ openModal(`<h3 style="font-size:20px;margin:0 0 6px">Nueva medición</h3><div class="mut" style="margin-bottom:10px">Valor del indicador (${r.ind.u||'sin unidad'}).</div>
+ <div class="form"><div class="f2"><label class="lab">Fecha</label><input id="md_f" type="date" value="${iso(TODAY)}"></div><div class="f2"><label class="lab">Valor</label><input id="md_v" type="number" step="any"></div></div>
+ <div class="lab" style="margin-top:10px">Nota</div><input id="md_n" type="text">
+ <div style="text-align:right;margin-top:12px"><button class="btn alt" onclick="medSave()">Guardar</button></div>`);
+}
+async function medSave(){
+ const r=cur(),f=$('#md_f').value,v=$('#md_v').value;if(!f||v==='')return toast('Cargá fecha y valor');
+ try{if(LIVE){putRdp(await api('POST','/rdp/'+r.id+'/mediciones',{fecha:f,valor:+v,nota:$('#md_n').value}));cur()._det=false;await loadDetail(cur())}
+  else{r.meds=r.meds||[];r.meds.push({fecha:f,valor:+v,nota:$('#md_n').value});r.meds.sort((a,b)=>a.fecha<b.fecha?-1:1);r.actual=+r.meds[r.meds.length-1].valor;recalc(r)}
+  closeModal();renderFicha();toast('Medición registrada')}catch(e){toast(e.message)}
+}
+
+/* ============ CALCULADORA (cantidades medidas si existen) ============ */
+function calcCard(r){
+ const meas=r.lines.length&&r.lines.every(l=>l.desp!=null),k=r.actual/(r.base||1);
+ const ln=r.lines.map(l=>{const a=l.antes*l.costo;const dq=!r.medido?null:meas?l.desp:l.antes*k;return {l,a,dq,d:dq==null?null:dq*l.costo}});
+ const antes=_s(ln,x=>x.a),desR=r.medido?_s(ln,x=>x.d):null;
+ const std=_s(r.lines.filter(l=>l.mode==='std'),l=>l.antes*l.costo)/(antes||1)*100;
+ const pay=r.ahorroReal>0?r.costo/r.ahorroReal*12:null;
+ const nt=!r.medido?['','El ahorro realizado se calcula al llegar al paso 7 (Monitorear), con la medición del indicador.']:r.ahorroReal>r.costo?['ok','Se recupera la inversión de '+fmtK(r.costo)+' en '+pay.toFixed(1).replace('.',',')+' meses.']:['w','Todavía no se recupera la inversión de '+fmtK(r.costo)+'.'];
+ return `<div class="card"><h3>Calculadora de impacto · antes y después <small>valores anualizados</small><button class="btn alt" style="margin-left:auto" onclick="openPL('${r.id}')">+ Pérdida</button></h3>
+ <div class="cols2"><div class="tw"><table><thead><tr><th>Tipo</th><th>Concepto</th><th>Un.</th><th class="r">Pérd. unit.</th><th class="r">Cant. antes</th><th class="r">Antes</th><th class="r">Cant. después</th><th class="r">Después</th><th class="r">Ahorro</th></tr></thead><tbody>
+ ${ln.map(({l,a,dq,d})=>`<tr><td>${tag(l.mode==='std'?'Estándar':'Libre',l.mode==='std'?'#2E9BD6':'#F28C28')}</td><td title="${esc2(l.mode==='std'?'Matriz de costos':l.fuente)}">${l.concepto}</td><td>${l.unidad}</td><td class="r nw">${fmtUS(l.costo)}</td><td class="r">${fv(l.antes)}</td><td class="r nw">${fmtK(a)}</td><td class="r">${dq!=null?fv(dq):'—'}</td><td class="r nw">${d!=null?fmtK(d):'—'}</td><td class="r nw"><b>${d!=null?fmtK(a-d):'—'}</b></td></tr>`).join('')||'<tr><td colspan="9" class="mut">Todavía no cargaste pérdidas.</td></tr>'}
+ </tbody><tfoot><tr class="tfoot"><td colspan="5" class="r">Total</td><td class="r nw">${fmtK(antes)}</td><td></td><td class="r nw">${desR!==null?fmtK(desR):'—'}</td><td class="r nw">${desR!==null?fmtK(antes-desR):'—'}</td></tr></tfoot></table>
+ <div class="note ${nt[0]}">${nt[1]}</div>
+ <div class="note">${std.toFixed(0)}% de la pérdida base proviene de valores estándar de la matriz; el resto son conceptos libres (p. ej. costos indirectos).${meas?' Las cantidades «después» son valores medidos.':''}</div></div>
+ <div><div class="ch" style="height:260px"><canvas id="c8"></canvas></div></div></div></div>`;
+}
+function drawBA(r){
+ const meas=r.lines.length&&r.lines.every(l=>l.desp!=null),k=r.actual/(r.base||1);
+ const antes=_s(r.lines,l=>l.antes*l.costo),L=['Antes','Meta'],V=[antes,antes*r.meta/(r.base||1)],C=['#E5484D','#2E9BD6'];
+ if(r.medido){L.splice(1,0,'Después (real)');V.splice(1,0,meas?_s(r.lines,l=>l.desp*l.costo):antes*k);C.splice(1,0,'#22A06B')}
+ mk('c8',{type:'bar',data:{labels:L,datasets:[{data:V,backgroundColor:C,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtK(c.raw)}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>fmtK(v)}}}}});
+}
+
+/* ============ ALTAS Y CAMBIOS (API o demo) ============ */
+async function plSave(){
+ const c=MAT.find(x=>x.id==PL.cid);
+ if(!(PL.cant>0))return toast('Cargá una cantidad mayor a 0');
+ if(!PL.std&&(!PL.concepto.trim()||!(PL.costo>0)))return toast('Completá concepto y pérdida unitaria');
+ if(!PL.std&&!PL.fuente.trim())return toast('Indicá el criterio de cálculo de la pérdida libre');
+ const l=PL.std?{mode:'std',cid:c.id,concepto:c.concepto,unidad:c.unidad,costo:plCost(),antes:PL.cant,desp:null,fuente:'Matriz de costos'}:{mode:'libre',cid:null,concepto:PL.concepto.trim(),unidad:PL.unidad||'U',costo:+PL.costo,antes:PL.cant,desp:null,fuente:PL.fuente};
+ try{
+  if(PL.tgt==='p0')P0.lines.push(l);
+  else if(LIVE)putRdp(await api('POST','/rdp/'+PL.tgt+'/perdidas',{modo:l.mode,matriz_id:l.cid,concepto:l.concepto,unidad:l.unidad,costo_unit:l.costo,cant_antes:l.antes,fuente:l.fuente}));
+  else{const r=RDPS.find(x=>x.id===PL.tgt);r.lines.push(l);recalc(r)}
+  closeModal();toast('Pérdida cargada');render();
+ }catch(e){toast(e.message)}
+}
+async function accSave(){
+ const r=cur();if(!AC_.txt.trim())return toast('Describí la acción');
+ const u=USERS[AC_.resp],ini=D(AC_.ini),comp=D(AC_.comp);
+ try{
+  if(LIVE){putRdp(await api('POST','/rdp/'+r.id+'/acciones',{tipo:AC_.tipo,texto:AC_.txt.trim(),causa_raiz:AC_.tipo==='Contramedida'?AC_.cr:'',resp_email:u.e,inicio:AC_.ini,compromiso:AC_.comp,inversion:AC_.inv}))}
+  else{const est=ini>TODAY?'Planificada':comp<TODAY?'Vencida':'En curso';
+   r.acc.push({id:'A-'+r.id.slice(-3)+'-'+String(r.acc.length+1).padStart(2,'0'),tipo:AC_.tipo,txt:AC_.txt.trim(),cr:AC_.tipo==='Contramedida'&&AC_.cr?AC_.cr:'—',resp:u.n+' '+u.a,ini,comp,av:0,est,costo:AC_.inv});
+   if(AC_.tipo==='Contramedida'){r.costo+=AC_.inv}}
+  const a=cur().acc[cur().acc.length-1];
+  renderFicha();
+  openModal(`<h3 style="font-size:18px;margin:0 0 10px">Aviso a ${u.n} ${u.a}</h3>
+  <div class="mail"><div><b>Para:</b> ${u.e}</div><div><b>Asunto:</b> [RDP Escorial] Te asignaron una acción: ${a.id}</div><hr>
+  <p>Hola ${u.n},</p><p>${LIVE?uname(CRED.email)||'Alguien':'Diego Ortiz'} te asignó una acción en <b>${r.id} · ${r.titulo}</b>:</p>
+  <p style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px"><b>${a.tipo}:</b> ${a.txt}<br><span class="mut">Compromiso: ${fd(comp)}${AC_.inv?' · Inversión: '+fmtUS(AC_.inv):''}</span></p>
+  <p><span class="btn" style="display:inline-block">Abrir en la plataforma</span></p><hr><span class="mut" style="font-size:12px">Mensaje automático de la plataforma RDP · Escorial Mejora Continua.</span></div>
+  <div class="note">${LIVE?'El correo queda registrado en la bandeja de salida y se envía por Microsoft 365 cuando el buzón esté habilitado.':'Vista previa de la muestra: en la versión real el correo sale al guardar.'}</div>
+  <div style="text-align:right;margin-top:10px"><button class="btn" onclick="closeModal()">Listo</button></div>`);
+ }catch(e){toast(e.message)}
+}
+async function userSave(){
+ const n=$('#un').value.trim(),a=$('#ua').value.trim(),e=$('#ue').value.trim().toLowerCase();if(!n||!a||!/@/.test(e))return toast('Completá nombre, apellido y un email válido');
+ try{if(LIVE){await api('POST','/usuarios',{nombre:n,apellido:a,email:e,area:$('#uar').value,rol:$('#uro').value});await loadLive()}
+  else USERS.push({n,a,e,ar:$('#uar').value,ro:$('#uro').value});
+  closeModal();renderAdm();toast('Usuario creado · invitación '+(LIVE?'en bandeja de salida':'enviada a '+e+' (simulado)'))}catch(er){toast(er.message)}
+}
+function openUserEdit(e){
+ const u=USERS.find(x=>x.e===e);
+ openModal(`<h3 style="font-size:20px;margin:0 0 6px">${u.a} ${u.n}</h3><div class="mut" style="margin-bottom:10px">${u.e}</div>
+ <div class="form"><div class="f2"><label class="lab">Área</label><select id="ea">${AREAS.map(a=>`<option ${a===u.ar?'selected':''}>${a}</option>`).join('')}</select></div><div class="f2"><label class="lab">Rol</label><select id="er"><option ${u.ro==='Usuario'?'selected':''}>Usuario</option><option ${u.ro==='Administrador'?'selected':''}>Administrador</option></select></div></div>
+ <label class="sw" style="margin-top:10px"><input id="eb" type="checkbox"> Dar de baja (deja de tener acceso; se conserva su historial)</label>
+ <div style="text-align:right;margin-top:12px"><button class="btn alt" onclick="userEditSave('${u.e}')">Guardar</button></div>`);
+}
+async function userEditSave(e){
+ const u=USERS.find(x=>x.e===e),ar=$('#ea').value,ro=$('#er').value,baja=$('#eb').checked;
+ try{if(LIVE){await api('PATCH','/usuarios/'+encodeURIComponent(e),{area:ar,rol:ro,activo:!baja});await loadLive()}else{u.ar=ar;u.ro=ro;if(baja)USERS.splice(USERS.indexOf(u),1)}
+  closeModal();renderAdm();toast('Usuario actualizado')}catch(er){toast(er.message)}
+}
+async function valSave(id){
+ const k=+$('#vk').value,dd=$('#vd').value,f=$('#vf').value.trim()||'—';if(!(k>0))return toast('Cargá un costo unitario mayor a 0');
+ try{
+  if(id){if(LIVE){await api('POST','/matriz/'+id+'/versiones',{costo:k,desde:dd,fuente:f});await loadLive()}else{const m=MAT.find(x=>x.id===id);m.v.unshift({desde:D(dd),costo:k});m.v.sort((a,b)=>b.desde-a.desde);m.fuente=f}}
+  else{const c=$('#vc').value.trim(),u=$('#vu').value.trim();if(!c||!u)return toast('Completá concepto y unidad');
+   if(LIVE){await api('POST','/matriz',{concepto:c,unidad:u,costo:k,desde:dd,fuente:f});await loadLive()}else MAT.push({id:Math.max(...MAT.map(x=>x.id))+1,concepto:c,unidad:u,fuente:f,v:[{desde:D(dd),costo:k}]})}
+  closeModal();renderAdm();toast('Matriz de costos actualizada');
+ }catch(e){toast(e.message)}
+}
+
+/* ============ CREAR RDP (Paso 0) ============ */
+const F0={titulo:'',planta:'',uet:'',sector:'',lider:'',unidad:'',base:'',meta:'',muda:'Defectos',det:{}};
+async function createRdp(){
+ const rec=recTool(),herr=P0.tool||rec.k;
+ if(!F0.titulo.trim()||!F0.sector)return toast('Completá el título y la ubicación (planta, UET y sector)');
+ const lider=F0.lider||(USERS[0]&&USERS[0].e);
+ const body={titulo:F0.titulo.trim(),planta:F0.planta,uet:F0.uet,sector:F0.sector,herramienta:herr,origen:P0.orig,origen_detalle:F0.det,muda:F0.muda,
+  prioridad:{seguridad:P0.s[0],severidad:P0.s[1],cantidad:P0.s[2],recurrencia:P0.s[3],complejidad:rec.s,recomendada:rec.k,estandar:P0.exs,cumple:P0.cum,estable:P0.est},justificacion:P0.just,lider_email:lider,
+  indicador_unidad:F0.unidad,linea_base:+F0.base||0,meta:+F0.meta||0,
+  perdidas:P0.lines.map(l=>({modo:l.mode,matriz_id:l.cid,concepto:l.concepto,unidad:l.unidad,costo_unit:l.costo,cant_antes:l.antes,fuente:l.fuente}))};
+ try{
+  let id;
+  if(LIVE){const a=await api('POST','/rdp',body);putRdp(a);id=a.id}
+  else{id='RDP-'+String(RDPS.length+1).padStart(3,'0');
+   const r={id,titulo:body.titulo,loc:{planta:F0.planta,uet:F0.uet,sector:F0.sector},herr,paso:1,inicio:TODAY,ind:{u:F0.unidad,b:+F0.base,m:+F0.meta},base:+F0.base||0,meta:+F0.meta||0,actual:+F0.base||0,P0:0,costo:0,
+    lines:P0.lines.map(l=>({...l})),muda:F0.muda,medido:false,impacto:null,cerrado:false,titulo2:'',lider:uname(lider),origen:P0.orig,crs:[],acc:[],pasos:{},meds:[],ahorroProy:0,ahorroReal:0};
+   recalc(r);RDPS.push(r)}
+  UI.sel=id;UI.fp=1;UI.tab='ficha';
+  P0.lines=[];P0.just='';P0.tool='';Object.assign(F0,{titulo:'',base:'',meta:'',unidad:'',det:{}});
+  render();toast('RDP '+id+' creado en el paso 1 · '+HN[herr]);
+ }catch(e){toast(e.message)}
+}
+
+function whoHTML(){return LIVE?`<div class="who"><span>${uname(UI.me.email)} · ${UI.rol}</span><button class="btn ghost" onclick="logout()">Salir</button></div>`:`<div class="who"><span>Ver como</span><select onchange="UI.rol=this.value;render()">${['Administrador','Usuario'].map(x=>`<option ${UI.rol===x?'selected':''}>${x}</option>`).join('')}</select></div>`}
+RDPS.forEach(r=>{r.pasos={};r.meds=[];if(r.paso>=1)r.pasos[1]={que:r.titulo,donde:r.loc.sector+' · '+r.loc.uet+' ('+r.loc.planta+')'}});
+
+/* ============ PASO 0 ============ */
+const TOOLS=[{k:'5PQ',n:'5 Porqués (PDCA simple)',f:'FR-MCO-035',t:'≈ 1–2 semanas',d:'Causa probable conocida, un solo sector, problema simple. Una o dos cadenas de 5 Porqués con validación de resultados.',e:'Sin mejoras → se escala a A4/A3 conservando los datos.'},
+ {k:'A4',n:'A4',f:'FR-MCO-004',t:'≈ 6 semanas',d:'Problema simple a intermedio con causas por desglosar (Ishikawa + 5PQ). Un equipo, ciclo corto, formato del Desafío RDP.',e:'Mejora parcial → reformular el 5PQ o escalar a A3.'},
+ {k:'A3',n:'A3',f:'FR-MCO-010',t:'≈ 3 meses',d:'Problema crónico, multicausal o transversal, con inversión o impacto alto. Los 8 pasos completos con desglose DG / PP / PO y monitoreo.',e:'Es el formato completo para dirección.'}];
+function recTool(){const s=P0.causa+P0.alc+P0.inv+P0.cro;return {s,k:s<=1?'5PQ':s<=3?'A4':'A3'}}
+function renderP0(){
+ const rec=recTool(),tot=P0.s.reduce((a,b)=>a+b,0),sel=P0.tool||rec.k;
+ const pls=Object.keys(ORG);if(!ORG[F0.planta])F0.planta=pls[0]||'';const uets=Object.keys(ORG[F0.planta]||{});if(!uets.includes(F0.uet))F0.uet=uets[0]||'';const secs=(ORG[F0.planta]||{})[F0.uet]||[];if(!secs.includes(F0.sector))F0.sector=secs[0]||'';
+ if(!F0.lider&&USERS.length)F0.lider=(LIVE&&UI.me?UI.me.email:USERS[0].e);
+ const so=(k,list)=>`<select onchange="P0.${k}=this.value;renderP0()">${list.map(([v,l])=>`<option value="${v}" ${String(P0[k])===String(v)?'selected':''}>${l}</option>`).join('')}</select>`;
+ const yn=k=>so(k,[['Sí','Sí'],['No','No']]);
+ const crit=['Seguridad · ¿afecta a las personas?','Severidad · ¿afecta al cliente?','Cantidad · ¿está en el Pareto?','Recurrencia · ¿sucede continuamente?'];
+ const orig={'Indicador':['Nombre del indicador','Valor actual','Meta'],'Pareto':['Categoría del Pareto','% del total','Período'],'Impacto (seguridad/cliente)':['Tipo de impacto','Descripción','Evidencia'],'Genba':['Sector observado','Hallazgo','Fecha de la recorrida'],'Reclamo de cliente':['N° de reclamo','Cliente','Cantidad']};
+ const kz=P0.exs==='No'?['w','Sin estándar no hay punto de comparación: primero hay que crear uno (paso 1C). Esto todavía no es un RDP.']:P0.cum==='No'?['w','Existe el estándar pero no se cumple: el incumplimiento es parte del problema. Se puede avanzar, registrándolo en el paso 1.']:P0.est==='No'?['w','El proceso no es estable: conviene estabilizarlo antes de aplicar RDP (el Kaizen solo ocurre sobre procesos estables).']:['ok','Hay estándar, se cumple y el proceso es estable: el problema es candidato a RDP.'];
+ $('#view').innerHTML=`
+ ${BAN(`<b>Muestra del Paso 0.</b> Los campos son orientativos; en la versión real se guardan en la base y alimentan el RDP.`)}
+ <div class="card"><h3>Paso 0 · Selección y priorización del problema</h3>
+  <div class="form"><div class="f2"><label class="lab">Problema (título)</label><input type="text" placeholder="Ej.: scrap en línea X" value="${esc2(F0.titulo)}" oninput="F0.titulo=this.value"></div>
+  <div class="f2"><label class="lab">Planta</label><select onchange="F0.planta=this.value;F0.uet='';F0.sector='';renderP0()">${pls.map(x=>`<option ${x===F0.planta?'selected':''}>${x}</option>`).join('')}</select></div>
+  <div class="f2"><label class="lab">UET</label><select onchange="F0.uet=this.value;F0.sector='';renderP0()">${uets.map(x=>`<option ${x===F0.uet?'selected':''}>${x}</option>`).join('')}</select></div>
+  <div class="f2"><label class="lab">Sector</label><select onchange="F0.sector=this.value">${secs.map(x=>`<option ${x===F0.sector?'selected':''}>${x}</option>`).join('')}</select></div>
+  <div class="f2"><label class="lab">Líder del RDP</label><select onchange="F0.lider=this.value">${USERS.map(u=>`<option value="${u.e}" ${u.e===F0.lider?'selected':''}>${u.n} ${u.a}</option>`).join('')}</select></div>
+  <div class="f2"><label class="lab">Tipo de pérdida (muda)</label><select onchange="F0.muda=this.value">${MUDAS.map(m=>`<option ${m===F0.muda?'selected':''}>${m}</option>`).join('')}</select></div></div>
+  <div class="form" style="margin-top:10px"><div class="f2"><label class="lab">Indicador (unidad)</label><input type="text" placeholder="% scrap, min parada/turno…" value="${esc2(F0.unidad)}" oninput="F0.unidad=this.value"></div>
+  <div class="f2"><label class="lab">Línea base</label><input type="number" step="any" value="${F0.base}" oninput="F0.base=this.value"></div>
+  <div class="f2"><label class="lab">Meta</label><input type="number" step="any" value="${F0.meta}" oninput="F0.meta=this.value"></div></div></div>
+ <div class="card"><h3>¿De dónde viene el problema? <small>origen y dato de respaldo</small></h3>
+  <div class="form"><div class="f2"><label class="lab">Origen</label>${so('orig',ORIG.map(x=>[x,x]))}</div>
+  ${(orig[P0.orig]||[]).map(l=>`<div class="f2"><label class="lab">${l}</label><input type="text" value="${esc2(F0.det[l]||'')}" oninput="F0.det['${l}']=this.value"></div>`).join('')}
+  </div>
+  <div style="margin-top:12px" class="form"><div class="f2"><label class="lab">¿Existe un estándar?</label>${yn('exs')}</div><div class="f2"><label class="lab">¿Se sigue?</label>${yn('cum')}</div><div class="f2"><label class="lab">¿Proceso estable?</label>${yn('est')}</div></div>
+  <div class="note ${kz[0]}">${kz[1]}</div></div>
+ <div class="card"><h3>Pérdida anual estimada <small>el valor «antes» que se compara al cierre</small><button class="btn alt" style="margin-left:auto" onclick="openPL('p0')">+ Pérdida</button></h3>
+  <div class="tw"><table><thead><tr><th>Tipo</th><th>Concepto</th><th>Un.</th><th class="r">Pérdida unitaria</th><th class="r">Cantidad anual</th><th class="r">Pérdida total</th></tr></thead><tbody>${P0.lines.map(l=>`<tr><td>${tag(l.mode==='std'?'Estándar':'Libre',l.mode==='std'?'#2E9BD6':'#F28C28')}</td><td>${l.concepto}</td><td>${l.unidad}</td><td class="r">${fmtUS(l.costo)}</td><td class="r">${fv(l.antes)}</td><td class="r"><b>${fmtUS(l.antes*l.costo)}</b></td></tr>`).join('')||'<tr><td colspan="6" class="mut">Todavía no cargaste pérdidas.</td></tr>'}</tbody><tfoot><tr class="tfoot"><td colspan="5" class="r">Pérdida anual total</td><td class="r">${fmtUS(_s(P0.lines,l=>l.antes*l.costo))}</td></tr></tfoot></table></div>
+  <div class="note">Usá <b>valores estándar</b> de la matriz de costos o un <b>concepto libre</b> (p. ej. costos indirectos que la matriz no contempla). Los libres quedan marcados como tales en el cálculo.</div></div>
+ <div class="card"><h3>Priorización <small>criterios del taller de RDP · decide el equipo por consenso</small></h3>
+  <div class="form">${crit.map((c,i)=>`<div class="f2"><label class="lab">${c}</label><select onchange="P0.s[${i}]=+this.value;renderP0()">${[1,2,3,4,5].map(v=>`<option ${P0.s[i]===v?'selected':''}>${v}</option>`).join('')}</select></div>`).join('')}
+  <div class="f2"><label class="lab">Puntaje total</label><div class="tot">${tot} <span class="mut" style="font-size:14px">/ 20</span></div><div class="pb" style="height:10px"><div style="width:${tot/20*100}%;background:${tot>=15?'#E5484D':tot>=10?'#F2A93B':'#2E9BD6'}"></div></div></div></div></div>
+ <div class="card"><h3>Elegí el modelo de resolución de problemas <small>la recomendación es una guía: la decisión es tuya</small></h3>
+  <div class="form" style="margin-bottom:12px"><div class="f2"><label class="lab">Causa raíz</label>${so('causa',[[0,'Conocida / probable'],[1,'A investigar'],[2,'Multicausal / desconocida']])}</div>
+  <div class="f2"><label class="lab">Alcance</label>${so('alc',[[0,'Un sector'],[1,'Una UET'],[2,'Varias UET o plantas']])}</div>
+  <div class="f2"><label class="lab">¿Requiere inversión?</label>${so('inv',[[0,'No'],[1,'Sí']])}</div>
+  <div class="f2"><label class="lab">Antigüedad</label>${so('cro',[[0,'Puntual / reciente'],[1,'Crónico / recurrente']])}</div></div>
+  <div class="tools">${TOOLS.map(t=>`<div class="tool ${sel===t.k?'sel':''}" onclick="P0.tool='${t.k}';renderP0()">${rec.k===t.k?'<span class="rec">★ Recomendado</span>':''}<h4>${t.n}</h4><div>${tag(t.f,HC[t.k])} <span class="mut">${t.t} (referencia)</span></div><p>${t.d}</p><p class="mut"><i>${t.e}</i></p></div>`).join('')}</div>
+  <div class="note">Complejidad ${rec.s}/6 → se recomienda <b>${HN[rec.k]}</b>. Elegiste <b>${HN[sel]}</b>.</div>
+  ${sel!==rec.k?`<div class="f2" style="margin-top:10px"><label class="lab">Elegiste distinto de lo recomendado: ¿por qué?</label><textarea rows="2" placeholder="Justificación (queda registrada en el RDP)" oninput="P0.just=this.value">${P0.just}</textarea></div>`:''}
+  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" onclick="createRdp()">Crear RDP</button><button class="btn ghost" onclick="toast('En la muestra no se guardan datos')">Guardar borrador</button></div></div>`;
+}
+function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',2200)}
+
+/* ============ NAVEGACIÓN ============ */
+function render(){
+ const T=[['dash','Dashboard'],['ficha','Ficha del RDP'],['p0','Nuevo RDP · Paso 0']];if(UI.rol==='Administrador')T.push(['adm','Administración']);
+ if(UI.tab==='adm'&&UI.rol!=='Administrador')UI.tab='dash';
+ $('#tabs').innerHTML=T.map(([k,l])=>`<button class="${UI.tab===k?'on':''}" onclick="UI.tab='${k}';render()">${l}</button>`).join('')+whoHTML();
+ UI.tab==='dash'?renderDash():UI.tab==='ficha'?renderFicha():UI.tab==='p0'?renderP0():renderAdm();
+}
+boot();
+</script>
+</body>
+</html>
