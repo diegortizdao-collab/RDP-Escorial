@@ -539,9 +539,61 @@ async function saveFormPaso(n){
   toast('Paso '+n+' guardado');renderFicha();
  }catch(e){toast(e.message)}
 }
+/* ───────── Exportar el formulario (A3 / A4 / 5 Porqués) en el formato FR-MCO ───────── */
+function docHTML(r){
+ const FM=FORMS[r.herr],P=FM.p,HX=esc2,col=n=>FC[FASE(n)];
+ const money=n=>'$ '+Math.round(n||0).toLocaleString('es-AR');
+ const val=(n,k)=>String(((r.pasos||{})[n]||{})[k]||'');
+ const nl=s=>HX(s).replace(/\n/g,'<br>');
+ const accT=t=>{const L=r.acc.filter(a=>a.tipo===t);return `<table class="g"><tr><th>ID</th><th>Acción</th><th>CR</th><th>Responsable</th><th>Inicio</th><th>Compromiso</th><th>Avance</th><th>Estado</th></tr>${L.map(a=>`<tr><td>${HX(a.id)}</td><td>${HX(a.txt)}</td><td>${HX(a.cr)}</td><td>${HX(a.resp)}</td><td>${fd(a.ini)}</td><td>${fd(a.comp)}</td><td>${a.av}%</td><td>${HX(a.est)}</td></tr>`).join('')||'<tr><td colspan="8" class="e">Sin acciones registradas.</td></tr>'}</table>`};
+ const medT=()=>{const M=r.meds||[];return `<table class="g"><tr><th>Fecha</th><th>Valor (${HX(r.ind.u)})</th><th>Nota</th></tr>${M.map(m=>`<tr><td>${fd(D(m.fecha))}</td><td>${fv(+m.valor)}</td><td>${HX(m.nota||'')}</td></tr>`).join('')||'<tr><td colspan="3" class="e">Sin mediciones registradas.</td></tr>'}</table>`};
+ const indT=()=>`<table class="g"><tr><th>Indicador</th><th>Línea base</th><th>Meta</th><th>Valor actual</th></tr><tr><td>${HX(r.ind.u)}</td><td>${fv(r.base)}</td><td>${fv(r.meta)}</td><td>${fv(r.actual)}</td></tr></table>`;
+ const lossT=()=>`<table class="g"><tr><th>Concepto</th><th>Unidad</th><th>Costo unit.</th><th>Cant. antes</th><th>Cant. después</th><th>Pérdida anual</th><th>Criterio</th></tr>${(r.lines||[]).map(l=>`<tr><td>${HX(l.concepto)}</td><td>${HX(l.unidad)}</td><td>${money(l.costo)}</td><td>${fv(l.antes)}</td><td>${l.desp==null?'—':fv(l.desp)}</td><td>${money(l.antes*l.costo)}</td><td>${HX(l.mode==='std'?'Matriz de costos':l.fuente||'')}</td></tr>`).join('')||'<tr><td colspan="7" class="e">Sin pérdidas cargadas.</td></tr>'}</table>`;
+ const block=n=>{const S=P[n];if(!S)return'';
+  const rows=S.f.map(x=>{const [k,l,t,o]=x;let v=val(n,k);if(t==='sel'&&o){const f=o.find(z=>z[0]===v);v=f?f[1]:''}return `<tr><td class="l">${HX(l)}</td><td class="v">${nl(v)}</td></tr>`}).join('');
+  let x='';
+  if(S.link==='ind')x=indT();
+  if(S.link&&S.link.startsWith('acc:'))x=accT(S.link.slice(4));
+  if(S.link==='med')x=medT();
+  if(n===1)x+=`<div class="sb">Impacto económico (pérdida anual)</div>${lossT()}`;
+  return `<div class="blk"><div class="bh" style="background:${col(n)}">${n} · ${HX(S.t)} <span>${FASE(n)} · ${FN[FASE(n)]}</span></div>${S.nota?`<div class="nt">${HX(S.nota)}</div>`:''}${rows?`<table class="f">${rows}</table>`:''}${x}</div>`};
+ const idx=herr=>herr==='5PQ'?[[1,2,3,4],[5,6,7,8]]:[[1,2,3,4,5],[6,7,8]];
+ const cols=idx(r.herr).map(L=>`<td class="col">${L.map(block).join('')}</td>`).join('');
+ const logo=(document.querySelector('.logos img')||{}).src||'';
+ const hoy=fd(new Date());
+ const css=`@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box}body{font:10px Arial,sans-serif;color:#1d2939;margin:0}table{border-collapse:collapse}
+ .top{width:100%;border:2px solid #0B2A4A}.top td{border:1px solid #0B2A4A;padding:5px 8px;vertical-align:middle}.top .t{font-size:17px;font-weight:bold;color:#0B2A4A;text-align:center}.top .c{font-size:10px;color:#667085;text-align:center}
+ .inf{width:100%;margin-top:4px}.inf td{border:1px solid #98A2B3;padding:3px 6px}.inf b{color:#0B2A4A}.inf .k{background:#EAF2F8;font-weight:bold;width:9%}
+ .main{width:100%;margin-top:6px}.main>tbody>tr>td.col{width:50%;vertical-align:top;padding:0 3px}
+ .blk{border:1px solid #98A2B3;margin-bottom:6px;page-break-inside:avoid}.bh{color:#fff;font-weight:bold;padding:4px 8px;font-size:11px}.bh span{float:right;font-weight:normal;font-size:9px}
+ .nt{padding:4px 8px;color:#667085;font-style:italic}table.f{width:100%}table.f td{border-top:1px solid #E4E7EC;padding:3px 8px;vertical-align:top}table.f td.l{width:34%;color:#475467;font-weight:bold;background:#F8FAFC}table.f td.v{min-height:14px}
+ table.g{width:100%;margin:0}table.g th{background:#EAF2F8;border:1px solid #98A2B3;padding:2px 5px;text-align:left;font-size:9px}table.g td{border:1px solid #D0D5DD;padding:2px 5px;vertical-align:top}td.e{color:#98A2B3;font-style:italic;text-align:center}
+ .sb{background:#EAF2F8;font-weight:bold;padding:3px 8px;border-top:1px solid #98A2B3;color:#0B2A4A}.pie{margin-top:6px;color:#667085;font-size:9px;text-align:center}
+ @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`;
+ const ahorro=`Pérdida base ${money(r.P0)} · Ahorro proyectado ${money(r.ahorroProy)} · Ahorro realizado ${money(r.ahorroReal)} · Inversión ${money(r.costo)}`;
+ return `<!doctype html><html><head><meta charset="utf-8"><title>${FM.cod}_${r.id}</title><style>${css}</style></head><body>
+ <table class="top"><tr><td style="width:18%">${logo?`<img src="${logo}" style="height:34px">`:'ESCORIAL'}</td><td class="t">${r.herr==='5PQ'?'PDCA · 5 Porqués':r.herr==='A3'?'A3 · Resolución de problemas':'A4 · Resolución de problemas'}</td><td class="c" style="width:22%"><b>${FM.cod}</b><br>${r.id} · Emitido ${hoy}</td></tr></table>
+ <table class="inf"><tr><td class="k">Problema</td><td colspan="5"><b>${HX(r.titulo)}</b></td><td class="k">Estado</td><td>${r.cerrado?'Cerrado':'Paso '+r.paso+' · '+FN[FASE(r.paso)]}</td></tr>
+ <tr><td class="k">Planta</td><td>${HX(r.loc.planta)}</td><td class="k">UET</td><td>${HX(r.loc.uet)}</td><td class="k">Sector</td><td>${HX(r.loc.sector)}</td><td class="k">Líder</td><td>${HX(r.lider)}</td></tr>
+ <tr><td class="k">Inicio</td><td>${fd(r.inicio)}</td><td class="k">Origen</td><td>${HX(r.origen)}</td><td class="k">Muda</td><td>${HX(r.muda)}</td><td class="k">Indicador</td><td>${fv(r.base)} → ${fv(r.meta)} ${HX(r.ind.u)}</td></tr>
+ <tr><td class="k">Impacto</td><td colspan="7">${ahorro}</td></tr></table>
+ <table class="main"><tr>${cols}</tr></table>
+ <div class="pie">Desarrollado por Mgter. Diego Ortiz — Líder de Mejora Continua | Consultor ISO</div></body></html>`;
+}
+async function exportPrep(){const r=cur();if(LIVE&&!r._det)await loadDetail(r);if(r._dirty){try{await saveFormPaso(r._dirty)}catch(e){}}return r}
+async function exportPDF(){
+ const r=await exportPrep(),f=document.createElement('iframe');f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.appendChild(f);
+ f.onload=()=>{setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(e){toast('No se pudo abrir la impresión')}setTimeout(()=>f.remove(),60000)},300)};
+ f.srcdoc=docHTML(r);toast('En el cuadro de impresión elegí «Guardar como PDF» · horizontal');
+}
+async function exportXLS(){
+ const r=await exportPrep(),h=docHTML(r).replace('<html>','<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+h],{type:'application/vnd.ms-excel'}));a.download=FORMS[r.herr].cod+'_'+r.id+'.xls';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);toast('Descargando '+a.download);
+}
+
 function pasoNav(r){
  return `<div class="rowh" style="margin-top:10px"><button class="btn ghost" ${r.paso<=0?'disabled':''} onclick="movePaso(-1)">◀ Paso anterior</button><button class="btn" ${r.paso>=8?'disabled':''} onclick="movePaso(1)">Avanzar al paso ${Math.min(8,r.paso+1)} ▶</button>
-  <button class="btn ghost" onclick="openHerr()">Cambiar herramienta</button>${r.cerrado?'':`<button class="btn ghost sp" ${r.paso<8?'disabled':''} onclick="cerrarRdp()">Cerrar RDP</button>`}</div>`;
+  <button class="btn ghost" onclick="openHerr()">Cambiar herramienta</button><button class="btn alt" onclick="exportPDF()">⬇ Descargar formulario (PDF)</button><button class="btn alt" onclick="exportXLS()">⬇ Excel</button>${r.cerrado?'':`<button class="btn ghost sp" ${r.paso<8?'disabled':''} onclick="cerrarRdp()">Cerrar RDP</button>`}</div>`;
 }
 async function movePaso(d){
  const r=cur(),n=Math.max(0,Math.min(8,r.paso+d));
