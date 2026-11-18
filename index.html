@@ -327,8 +327,8 @@ function renderFicha(){
  ${calcCard(r)}
  <div class="card"><h3>Registro de acciones <small>${A.length} de ${r.acc.length}</small><button class="btn alt" style="margin-left:auto" onclick="openAcc()">+ Acción</button></h3>
   <div class="filters" style="margin-bottom:10px"><div class="f"><label>Tipo</label><select onchange="UI.aTipo=this.value;renderFicha()">${opts(Object.keys(TIPOC).map(x=>[x,x]),UI.aTipo,'Todos')}</select></div><div class="f"><label>Estado</label><select onchange="UI.aEst=this.value;renderFicha()">${opts(Object.keys(ESTC).map(x=>[x,x]),UI.aEst,'Todos')}</select></div></div>
-  <div class="tw"><table><thead><tr><th>ID</th><th>Tipo</th><th>Acción</th><th>Causa raíz</th><th>Responsable</th><th>Inicio</th><th>Compromiso</th><th>Avance</th><th>Estado</th></tr></thead><tbody>
-  ${A.map(a=>`<tr><td class="nw"><b>${a.id}</b></td><td>${tag(a.tipo,TIPOC[a.tipo])}</td><td>${a.txt}</td><td class="mut nw">${a.cr==='—'?'—':a.cr+' · '+(r.crs[+a.cr.slice(2)-1]||'').slice(0,26)}</td><td class="mut nw">${AVH(a.respE,'sm')}${a.resp}</td><td class="nw">${fd(a.ini)}</td><td class="nw">${fd(a.comp)}</td><td style="min-width:110px"><div class="pb"><div style="width:${a.av}%;background:${ESTC[a.est]}"></div></div><small class="mut">${a.av}%</small></td><td>${tag(a.est,ESTC[a.est])}</td></tr>`).join('')||'<tr><td colspan="9" class="mut">Aún no hay acciones en este paso del RDP.</td></tr>'}
+  <div class="tw"><table><thead><tr><th>ID</th><th>Tipo</th><th>Acción</th><th>Causa raíz</th><th>Responsable</th><th>Inicio</th><th>Compromiso</th><th>Avance</th><th>Estado</th><th></th></tr></thead><tbody>
+  ${A.map(a=>`<tr><td class="nw"><b>${a.id}</b></td><td>${tag(a.tipo,TIPOC[a.tipo])}</td><td>${a.txt}</td><td class="mut nw">${a.cr==='—'?'—':a.cr+' · '+(crsOf(r)[+a.cr.slice(2)-1]||'').slice(0,26)}</td><td class="mut nw">${AVH(a.respE,'sm')}${a.resp}</td><td class="nw">${fd(a.ini)}</td><td class="nw">${fd(a.comp)}</td><td style="min-width:110px"><div class="pb"><div style="width:${a.av}%;background:${ESTC[a.est]}"></div></div><small class="mut">${a.av}%</small></td><td>${tag(a.est,ESTC[a.est])}</td><td class="nw r">${accBtns(r.acc.indexOf(a))}</td></tr>`).join('')||'<tr><td colspan="10" class="mut">Aún no hay acciones en este paso del RDP.</td></tr>'}
   </tbody></table></div>
   <div class="note">Un único registro alimenta las tres tablas del A3 (contención, contramedidas e implementación). Cada contramedida queda ligada a la causa raíz que ataca. Sin pasos de aprobación: al asignar un responsable le llega un correo y la acción queda en curso.</div></div>`;
  const n=10,imp=r.paso>=6?Math.round(n*.7):n;const q=rng(5+r.id.length*r.paso+r.paso);
@@ -414,7 +414,7 @@ function openAcc(t){const r=cur();AC_={tipo:t||'Contramedida',txt:'',cr:'',resp:
  <div class="form"><div class="f2"><label class="lab">Tipo</label><select onchange="AC_.tipo=this.value">${Object.keys(TIPOC).map(t=>`<option ${t===AC_.tipo?'selected':''}>${t}</option>`).join('')}</select></div>
  <div class="f2"><label class="lab">Responsable</label><select onchange="AC_.resp=+this.value">${USERS.map((u,i)=>`<option value="${i}">${u.n} ${u.a} · ${u.ar}</option>`).join('')}</select></div></div>
  <div class="lab" style="margin-top:10px">Acción</div><textarea rows="2" placeholder="¿Qué hay que hacer?" oninput="AC_.txt=this.value"></textarea>
- <div class="lab" style="margin-top:10px">Causa raíz que ataca</div><select onchange="AC_.cr=this.value"><option value="">— Sin vincular —</option>${r.crs.map((c,i)=>`<option value="CR${i+1}">CR${i+1} · ${c}</option>`).join('')}</select>
+ <div class="lab" style="margin-top:10px">Causa raíz que ataca</div><select onchange="AC_.cr=this.value"><option value="">— Sin vincular —</option>${crsOf(r).map((c,i)=>`<option value="CR${i+1}">CR${i+1} · ${esc2(c).slice(0,50)}</option>`).join('')}</select>
  <div class="form" style="margin-top:10px"><div class="f2"><label class="lab">Inicio</label><input type="date" value="${AC_.ini}" onchange="AC_.ini=this.value"></div><div class="f2"><label class="lab">Compromiso</label><input type="date" value="${AC_.comp}" onchange="AC_.comp=this.value"></div><div class="f2"><label class="lab">Inversión ($)</label><input type="number" min="0" placeholder="0" oninput="AC_.inv=+this.value"></div></div>
  <div style="text-align:right;margin-top:12px"><button class="btn alt" onclick="accSave()">Asignar y avisar</button></div>`)}
 
@@ -492,7 +492,7 @@ function mapRdp(a){
  const r={id:a.id,titulo:a.titulo,loc:{ger:a.gerencia,area:a.area,sector:a.sector,planta:a.planta},herr:a.herramienta,paso:a.paso,inicio:D(a.inicio),
   ind:{u:a.indicador_unidad||'',b:+a.linea_base,m:+a.meta},base:+a.linea_base,meta:+a.meta,actual:+a.actual,P0:+a.perdida_base,costo:+a.inversion,
   ahorroProy:+a.ahorro_proy,ahorroReal:+a.ahorro_real,medido:a.paso>=7,impacto:a.ultima_medicion?D(a.ultima_medicion):(a.paso>=7?TODAY:null),
-  cerrado:a.cerrado,lider:uname(a.lider_email),liderEmail:a.lider_email,origen:a.origen,muda:a.muda,crs:[],justificacion:a.justificacion,
+  cerrado:a.cerrado,lider:uname(a.lider_email),liderEmail:a.lider_email,creadoPor:a.creado_por,origen:a.origen,muda:a.muda,crs:[],justificacion:a.justificacion,
   lines:(a.perdidas||[]).map(p=>({id:p.id,mode:p.modo,cid:p.matriz_id,concepto:p.concepto,unidad:p.unidad,costo:+p.costo_unit,antes:+p.cant_antes,desp:p.cant_despues==null?null:+p.cant_despues,fuente:p.fuente,calc:p.calculo||{}})),
   acc:(a.acciones||[]).map(x=>({id:x.codigo,_id:x.id,tipo:x.tipo,txt:x.texto,cr:x.causa_raiz||'—',resp:uname(x.resp_email),respE:x.resp_email,ini:D(x.inicio),comp:D(x.compromiso),av:x.avance,est:x.estado,costo:+x.inversion})),
   pasos:old?old.pasos:{},meds:old?old.meds:[],_det:old?old._det:false};
@@ -544,7 +544,7 @@ const VALID=[['','— Elegí —'],['total','Mejoró totalmente → estandarizar
 const FORMS={
  A3:{cod:'FR-MCO-010',p:{
   1:{t:'Clarificar el problema (5W + 2H)',f:W5H2,link:'acc:Contención'},
-  2:{t:'Desglosar el problema',f:[['dg','DG · Desglose general (¿dónde se concentra? Pareto)','area'],['pp','PP · Punto prioritario','area'],['po','PO · Punto de ocurrencia (dónde y cuándo ocurre)','area']]},
+  2:{t:'Desglosar el problema',custom:'desglose',f:[['po','PO · Punto de ocurrencia (dónde y cuándo ocurre)','area']]},
   3:{t:'Establecer el objetivo',f:[['obj','Objetivo (qué, cuánto y para cuándo)','area'],['fecha','Fecha objetivo','date']],link:'ind'},
   4:{t:'Análisis de causa raíz (Ishikawa + 5 Porqués)',f:ISH.concat(PQ('a'))},
   5:{t:'Contramedidas',f:[['crit','Criterio de selección (velocidad · efectividad · costo)','area']],link:'acc:Contramedida'},
@@ -553,7 +553,7 @@ const FORMS={
   8:{t:'Estandarizar y compartir',f:[['est','Estándar actualizado (documento / código)','text'],['yok','Yokoten · dónde más se replica','area'],['lec','Lecciones aprendidas','area']],link:'acc:Estandarización'}}},
  A4:{cod:'FR-MCO-004',p:{
   1:{t:'Definir el problema (5W + 2H) y contención',f:W5H2,link:'acc:Contención'},
-  2:{t:'Desglosar el problema',f:[['dg','Desglose: ¿dónde se concentra el problema?','area']]},
+  2:{t:'Desglosar el problema',custom:'desglose',f:[]},
   3:{t:'Objetivo',f:[['obj','Objetivo (qué, cuánto y para cuándo)','area']],link:'ind'},
   4:{t:'Causa raíz (Ishikawa + 5 Porqués)',f:ISH.concat(PQ('a'))},
   5:{t:'Contramedidas',f:[['crit','Criterio de selección','area']],link:'acc:Contramedida'},
@@ -569,7 +569,123 @@ const FORMS={
   6:{t:'03 · Avance de contramedidas',f:[['nota','Observaciones','area']],link:'acc:Contramedida'},
   7:{t:'04 · Validar resultados',f:[['val','Resultado','sel',VALID],['concl','Comentario','area']],link:'med'},
   8:{t:'Estandarizar y compartir',f:[['est','Estándar actualizado','text'],['yok','Se comparte con','area']],link:'acc:Estandarización'}}}};
-const pasoFill=(r,n)=>{const F=(FORMS[r.herr].p[n]||{f:[]}).f,d=(r.pasos||{})[n]||{};return F.length?F.filter(x=>String(d[x[0]]||'').trim()).length/F.length:0};
+const pasoFill=(r,n)=>{const S0=FORMS[r.herr].p[n]||{f:[]},F=S0.f,d=(r.pasos||{})[n]||{};if(S0.custom==='desglose'){const ok=desgInfo(r).path.length?1:0;return F.length?(ok+F.filter(x=>String(d[x[0]]||'').trim()).length/F.length)/2:ok}return F.length?F.filter(x=>String(d[x[0]]||'').trim()).length/F.length:0};
+/* ───────── Edición de acciones: avance de contramedidas y datos ───────── */
+const canEditR=r=>!LIVE||UI.rol==='Administrador'||!!(UI.me&&(r.liderEmail===UI.me.email||r.creadoPor===UI.me.email));
+const crsOf=r=>{if(!LIVE)return r.crs||[];const d=((r.pasos||{})[4])||{};return [d.araiz,d.braiz].map(x=>String(x||'').trim()).filter(Boolean)};
+function accBtns(i){const r=cur();return `<button class="btn ghost" style="padding:3px 8px" title="${canEditR(r)?'Editar acción':'Informar avance'}" onclick="openAccEdit(${i})">✎</button>${canEditR(r)?` <button class="btn ghost" style="padding:3px 8px;color:#E5484D" title="Eliminar" onclick="accAskDel(${i})">🗑</button>`:''}`}
+let AE={};
+function openAccEdit(i){
+ const r=cur(),a=r.acc[i];if(!a)return;const full=canEditR(r);
+ const u=USERS.find(x=>x.e===a.respE)||USERS.find(x=>x.n+' '+x.a===a.resp);
+ AE={i,full,txt:a.txt,resp:u?u.e:'',ini:iso(a.ini),comp:iso(a.comp),inv:a.costo||0,cr:a.cr==='—'?'':a.cr,av:a.av,tipo:a.tipo};
+ const cr=crsOf(r);
+ openModal(`<h3 style="font-size:20px;margin:0 0 2px">${a.id} · ${tag(a.tipo,TIPOC[a.tipo])}</h3><div class="mut" style="margin-bottom:12px">${full?'Podés corregir cualquier dato de la acción. Si cambiás el responsable, la persona nueva recibe un correo.':'Sos responsable de esta acción: podés informar su avance.'}</div>
+ <div class="lab">Avance <b id="aeav" style="font-size:16px;color:var(--navy)">${AE.av}%</b></div>
+ <input type="range" min="0" max="100" step="5" value="${AE.av}" style="width:100%" oninput="AE.av=+this.value;$('#aeav').textContent=AE.av+'%'">
+ <div class="rowh" style="gap:6px;margin:6px 0 10px">${[0,25,50,75,100].map(v=>`<button class="btn ghost" style="padding:3px 10px" onclick="AE.av=${v};openAccEditKeep()">${v}%</button>`).join('')}<span class="mut">100 % cierra la acción</span></div>
+ ${full?`<div class="lab">Acción</div><textarea rows="2" oninput="AE.txt=this.value">${esc2(AE.txt)}</textarea>
+ <div class="form" style="margin-top:10px"><div class="f2"><label class="lab">Responsable</label><select onchange="AE.resp=this.value">${USERS.map(x=>`<option value="${x.e}" ${x.e===AE.resp?'selected':''}>${x.n} ${x.a} · ${x.ar}</option>`).join('')}</select></div>
+ ${a.tipo==='Contramedida'?`<div class="f2"><label class="lab">Causa raíz que ataca</label><select onchange="AE.cr=this.value"><option value="">— Sin vincular —</option>${cr.map((c,k)=>`<option value="CR${k+1}" ${AE.cr==='CR'+(k+1)?'selected':''}>CR${k+1} · ${esc2(c).slice(0,40)}</option>`).join('')}</select></div>`:''}</div>
+ <div class="form" style="margin-top:10px"><div class="f2"><label class="lab">Inicio</label><input type="date" value="${AE.ini}" onchange="AE.ini=this.value"></div><div class="f2"><label class="lab">Compromiso</label><input type="date" value="${AE.comp}" onchange="AE.comp=this.value"></div>
+ ${a.tipo==='Contramedida'?`<div class="f2"><label class="lab">Inversión ($)</label><input type="number" min="0" value="${AE.inv||''}" oninput="AE.inv=+this.value"></div>`:''}</div>`:`<div class="note">${esc2(a.txt)}</div>`}
+ <div style="text-align:right;margin-top:12px"><button class="btn alt" onclick="accEditSave()">Guardar</button></div>`);
+}
+function openAccEditKeep(){const keep={...AE};openAccEdit(AE.i);Object.assign(AE,keep);const m=$('#modal');const rg=m.querySelector&&m.querySelector('input[type=range]');if(rg)rg.value=AE.av;const v=$('#aeav');if(v)v.textContent=AE.av+'%'}
+async function accEditSave(){
+ const r=cur(),a=r.acc[AE.i];if(!a)return;
+ if(AE.full&&!String(AE.txt).trim())return toast('Describí la acción');
+ if(AE.full&&AE.comp<AE.ini)return toast('El compromiso no puede ser anterior al inicio');
+ try{
+  if(LIVE){const b={avance:AE.av};if(AE.full)Object.assign(b,{texto:AE.txt.trim(),resp_email:AE.resp,inicio:AE.ini,compromiso:AE.comp,causa_raiz:AE.cr,inversion:AE.inv||0});
+   putRdp(await api('PATCH','/acciones/'+a._id,b))}
+  else{a.av=AE.av;if(AE.full){a.txt=AE.txt.trim();const u=USERS.find(x=>x.e===AE.resp);if(u){a.resp=u.n+' '+u.a;a.respE=u.e}a.ini=D(AE.ini);a.comp=D(AE.comp);a.cr=AE.cr||'—';a.costo=AE.inv||0}
+   a.est=a.av>=100?'Cerrada':(a.ini>TODAY&&a.av===0)?'Planificada':a.comp<TODAY?'Vencida':'En curso';
+   r.costo=_s(r.acc.filter(x=>x.tipo==='Contramedida'),x=>x.costo||0)}
+  closeModal();toast(AE.av>=100?'Acción cerrada':'Acción actualizada');render();
+ }catch(e){toast(e.message)}
+}
+let AD={};
+function accAskDel(i){const a=cur().acc[i];if(!a)return;AD={i};openModal(`<h3 style="font-size:20px;margin:0 0 6px">Eliminar acción</h3><div style="margin-bottom:10px">¿Eliminar <b>${a.id}</b> — ${esc2(a.txt)}? No se puede deshacer.</div><div style="text-align:right"><button class="btn ghost" onclick="closeModal()">Cancelar</button> <button class="btn" style="background:#E5484D" onclick="accDel()">Eliminar</button></div>`)}
+async function accDel(){const r=cur(),a=r.acc[AD.i];if(!a)return;try{if(LIVE)putRdp(await api('DELETE','/acciones/'+a._id));else{r.acc.splice(AD.i,1);r.costo=_s(r.acc.filter(x=>x.tipo==='Contramedida'),x=>x.costo||0)}closeModal();toast('Acción eliminada');render()}catch(e){toast(e.message)}}
+
+/* ───────── Diagrama de pescado (Ishikawa) armado con los datos del paso 4 ───────── */
+const ISH_C=[['mano','Mano de obra','#2E9BD6'],['maq','Máquina','#F28C28'],['met','Método','#22A06B'],['mat','Material','#8E4EC6'],['med','Medición','#E5484D'],['amb','Medio ambiente','#0F5C8C']];
+const wrapT=(t,n,m)=>{const w=String(t||'').split(/\s+/).filter(Boolean),o=[];let l='';for(const x of w){if((l+' '+x).trim().length>n){if(l)o.push(l);l=x}else l=(l+' '+x).trim()}if(l)o.push(l);return o.slice(0,m)};
+function ishiSVG(r){
+ const d=((r.pasos||{})[4])||{},d1=((r.pasos||{})[1])||{},inf=desgInfo(r);
+ const head=wrapT((d1.que||r.titulo||'Problema')+(inf.path.length?' · '+inf.path.map(p=>p.n).join(' › '):''),24,6);
+ const W=980,H=470,SY=235,E=x=>esc2(x);
+ let g=`<line x1="30" y1="${SY}" x2="770" y2="${SY}" stroke="#0B2A4A" stroke-width="4"/><polygon points="770,${SY-10} 785,${SY} 770,${SY+10}" fill="#0B2A4A"/>`;
+ ISH_C.forEach(([k,lab,col],idx)=>{
+  const top=idx<3,xb=200+(idx%3)*250,x0=xb-85,yEnd=top?42:H-42;
+  g+=`<line x1="${x0}" y1="${yEnd}" x2="${xb}" y2="${SY}" stroke="${col}" stroke-width="3"/>`;
+  g+=`<rect x="${x0-62}" y="${top?8:H-34}" width="124" height="26" rx="13" fill="${col}"/><text x="${x0}" y="${top?26:H-16}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">${E(lab)}</text>`;
+  const items=String(d[k]||'').split(/\n+/).map(x=>x.trim()).filter(Boolean),show=items.slice(0,6);
+  show.forEach((t,j)=>{const y=top?72+j*25:H-72-j*25,xr=x0+Math.abs(y-yEnd)/(SY-42)*85;
+   g+=`<line x1="${xr-46}" y1="${y}" x2="${xr}" y2="${y}" stroke="${col}" stroke-width="1.5"/><text x="${xr-50}" y="${y+4}" text-anchor="end" font-size="11" fill="#1D2939">${E(t.length>34?t.slice(0,33)+'…':t)}</text>`});
+  if(items.length>6)g+=`<text x="${x0}" y="${top?72+6*25:H-72-6*25}" text-anchor="middle" font-size="10" fill="#667085">+${items.length-6} más</text>`;
+ });
+ g+=`<rect x="786" y="${SY-70}" width="188" height="140" rx="12" fill="#0F5C8C"/>`+head.map((l,i)=>`<text x="880" y="${SY-40+i*20+(6-head.length)*8}" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">${E(l)}</text>`).join('');
+ const rc=crsOf(r);
+ return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;background:#fff;border:1px solid #D8E1EB;border-radius:10px">${g}</svg>${rc.length?`<div class="note" style="margin-top:8px"><b>Causa${rc.length>1?'s':''} raíz:</b> ${rc.map((c,i)=>`CR${i+1} · ${E(c)}`).join(' &nbsp;|&nbsp; ')}</div>`:''}`;
+}
+function updIshi(){const e=$('#ishi');if(e)e.innerHTML=ishiSVG(cur())}
+
+/* ───────── Desglose por niveles (embudo): del problema general al punto prioritario ───────── */
+const DG_C=['#2E9BD6','#F28C28','#22A06B','#8E4EC6','#E5484D','#0F5C8C','#F7B25A','#98A2B3'];
+function desgInfo(r){
+ const d=((r.pasos||{})[2])||{},niv=d.niv||[],total=+d.tot||0,lv=[];let tot=total;
+ niv.forEach((L,i)=>{const items=(L.items||[]).map(x=>({n:String(x.n||''),c:+x.c||0}));const sum=items.reduce((a,x)=>a+x.c,0);
+  const eff=(L.sel!=null&&items[L.sel])?L.sel:(items.some(x=>x.c>0)?items.reduce((b,x,k)=>x.c>items[b].c?k:b,0):null);
+  lv.push({i,dim:L.dim||'',items,sum,tot,eff,sel:L.sel});tot=eff!=null?items[eff].c:0});
+ const path=lv.filter(l=>l.eff!=null&&l.items[l.eff].n&&l.items[l.eff].c>0).map(l=>({dim:l.dim,n:l.items[l.eff].n,c:l.items[l.eff].c,tot:l.tot}));
+ const last=path[path.length-1],pct=last&&total?last.c/total*100:0,un=d.un||'';
+ const pp=path.length?path.map(p=>p.n).join(' › ')+' — '+fq(last.c)+(total?' de '+fq(total):'')+' '+un+(total?' ('+pct.toFixed(0)+' % del problema)':''):'';
+ return {lv,path,total,un,pct,pp,last};
+}
+const dsg=()=>{const r=cur();r.pasos=r.pasos||{};const d=r.pasos[2]=r.pasos[2]||{};if(!d.niv)d.niv=[{dim:'',items:[{n:'',c:''},{n:'',c:''}],sel:null}];r._dirty=2;return d};
+const dgSet=(f)=>{f(dsg());renderFicha()};
+function dgTot(v){const d=dsg();d.tot=v}
+function dgTotR(v){dgSet(d=>{d.tot=v})}
+function dgUn(v){const d=dsg();d.un=v}
+function dgDim(i,v){dsg().niv[i].dim=v}
+function dgName(i,j,v){dsg().niv[i].items[j].n=v}
+function dgCant(i,j,v){dgSet(d=>{d.niv[i].items[j].c=v})}
+function dgAdd(i){dgSet(d=>{d.niv[i].items.push({n:'',c:''})})}
+function dgRem(i,j){dgSet(d=>{if(d.niv[i].items.length>1){const L=d.niv[i];L.items.splice(j,1);if(L.sel!=null){if(L.sel===j)L.sel=null;else if(L.sel>j)L.sel--}}})}
+function dgSel(i,j){dgSet(d=>{const inf=desgInfo(cur());const cambia=inf.lv[i]&&inf.lv[i].eff!==j;d.niv[i].sel=j;if(cambia&&d.niv.length>i+1){d.niv.length=i+1;toast('Se reinició el desglose posterior a este nivel')}})}
+function dgDeeper(){dgSet(d=>{if(d.niv.length<5)d.niv.push({dim:'',items:[{n:'',c:''},{n:'',c:''}],sel:null})})}
+function dgDrop(){dgSet(d=>{if(d.niv.length>1)d.niv.pop()})}
+function desgCard(r){
+ const d=dsg(),inf=desgInfo(r),n=inf.lv.length;
+ const level=L=>{const i=L.i,max=Math.max(...L.items.map(x=>x.c),0),dif=L.tot-L.sum;
+  const st=!L.tot?['','Cargá primero el total del nivel anterior']:Math.abs(dif)<1e-9?['ok','Cuadra con el total ('+fq(L.tot)+' '+inf.un+')']:dif>0?['w','Falta asignar '+fq(dif)+' '+inf.un+' (agregá una fila «Otros»)']:['w','Te pasaste por '+fq(-dif)+' '+inf.un+' respecto del total'];
+  let acc=0;
+  return `<div style="border:1px solid #D8E1EB;border-radius:12px;padding:12px;margin-top:10px;background:${i%2?'#F8FBFE':'#fff'}">
+  <div class="rowh" style="gap:8px"><b style="color:var(--navy)">Nivel ${i+1}</b><span class="mut">${i===0?'Desglose general':'Desglose de «'+esc2(inf.lv[i-1].items[inf.lv[i-1].eff]?inf.lv[i-1].items[inf.lv[i-1].eff].n:'')+'»'} · por</span><input type="text" style="max-width:240px" placeholder="¿Por qué criterio? Ej.: color, tipo de pieza, turno" value="${esc2(L.dim)}" onchange="dgDim(${i},this.value)"><span class="mut sp">Total del nivel: <b>${fq(L.tot)} ${esc2(inf.un)}</b></span></div>
+  <div class="tw" style="margin-top:8px"><table><thead><tr><th>Categoría</th><th class="r" style="width:110px">Cantidad</th><th class="r">% del nivel</th><th class="r">Acum.</th><th style="min-width:160px">Incidencia</th><th>Priorizar</th><th></th></tr></thead><tbody>
+  ${L.items.map((x,j)=>{const p=L.sum?x.c/L.sum*100:0;acc+=p;const col=DG_C[j%DG_C.length],top=L.eff===j&&x.c>0;
+   return `<tr style="${top?'background:#FFF6E8':''}"><td><input type="text" placeholder="Ej.: Blanco" value="${esc2(x.n)}" onchange="dgName(${i},${j},this.value)"></td><td><input type="number" min="0" class="r" value="${x.c||''}" onchange="dgCant(${i},${j},this.value)"></td><td class="r nw"><b>${p.toFixed(0)}%</b></td><td class="r nw mut">${acc.toFixed(0)}%</td>
+   <td><div class="pb" style="height:14px"><div style="width:${max?x.c/max*100:0}%;background:${col}"></div></div></td>
+   <td class="nw"><label style="cursor:pointer"><input type="radio" name="dgs${i}" ${top?'checked':''} onclick="dgSel(${i},${j})"> ${top?(L.sel==null?'<span class="tag" style="background:#F28C28;color:#fff">Mayor incidencia</span>':'<span class="tag" style="background:#22A06B;color:#fff">Priorizado</span>'):''}</label></td>
+   <td class="r"><button class="btn ghost" style="padding:2px 8px" title="Quitar" onclick="dgRem(${i},${j})">✕</button></td></tr>`}).join('')}
+  </tbody></table></div>
+  <div class="rowh" style="margin-top:6px"><button class="btn ghost" onclick="dgAdd(${i})">+ Categoría</button><span class="note ${st[0]}" style="margin:0;flex:1">${st[1]}</span>${i===n-1&&n>1?`<button class="btn ghost" onclick="dgDrop()">Quitar nivel</button>`:''}</div></div>`};
+ const last=inf.lv[n-1],eff=last&&last.eff!=null?last.items[last.eff]:null;
+ const funnel=inf.path.length?`<div style="margin-top:12px"><div class="lab">Brecha: cuánto del problema explica cada nivel</div>${[{n:'Problema total',c:inf.total}].concat(inf.path.map(p=>({n:p.n,c:p.c}))).map((p,k)=>`<div class="rowh" style="gap:8px;margin:3px 0"><span style="min-width:170px;font-size:12px">${k?'↳ ':''}${esc2(p.n)}</span><div class="pb" style="flex:1;height:16px"><div style="width:${inf.total?p.c/inf.total*100:0}%;background:${DG_C[k%DG_C.length]}"></div></div><b style="min-width:120px;text-align:right;font-size:12px">${fq(p.c)} ${esc2(inf.un)} · ${inf.total?(p.c/inf.total*100).toFixed(0):0}%</b></div>`).join('')}</div>`:'';
+ return `<div class="note">El desglose es un embudo: partís del problema total, lo abrís por un criterio, vas al segmento de <b>mayor incidencia</b> y lo volvés a abrir por otro criterio, hasta llegar al <b>punto prioritario</b>. Cada nivel tiene que sumar el total del anterior.</div>
+ <div class="form" style="margin-top:8px"><div class="f2"><label class="lab">Total del problema (cantidad)</label><input type="number" min="0" placeholder="Ej.: 800" value="${d.tot||''}" onchange="dgTotR(this.value)"></div><div class="f2"><label class="lab">Unidad</label><input type="text" placeholder="piezas, termos, min…" value="${esc2(d.un||'')}" onchange="dgUn(this.value);renderFicha()"></div></div>
+ ${inf.lv.map(level).join('')}
+ <div class="rowh" style="margin-top:10px"><button class="btn alt" ${eff&&inf.lv.length<5?'':'disabled'} onclick="dgDeeper()">${eff?'Profundizar en «'+esc2(eff.n||'…')+'» ▶':'Profundizar ▶'}</button><span class="mut">Hasta 5 niveles</span></div>
+ ${funnel}
+ ${inf.pp?`<div class="note ok" style="margin-top:12px"><b>Problema priorizado:</b> ${esc2(inf.pp)}</div>`:'<div class="note w" style="margin-top:12px">Cargá cantidades en el primer nivel para ver el punto prioritario.</div>'}`;
+}
+function desgDoc(r){
+ const inf=desgInfo(r);if(!inf.lv.length||!inf.total)return'';
+ return inf.lv.map(L=>`<div class="sb">Nivel ${L.i+1} · por ${esc2(L.dim||'—')} (total ${fq(L.tot)} ${esc2(inf.un)})</div><table class="g"><tr><th>Categoría</th><th>Cantidad</th><th>% del nivel</th><th>Priorizado</th></tr>${L.items.map((x,j)=>`<tr><td>${esc2(x.n)}</td><td>${fq(x.c)}</td><td>${L.sum?(x.c/L.sum*100).toFixed(0):0}%</td><td>${L.eff===j&&x.c>0?'★':''}</td></tr>`).join('')}</table>`).join('')+(inf.pp?`<div class="sb" style="background:#E8F6EE">Problema priorizado: ${esc2(inf.pp)}</div>`:'');
+}
+
 function formCard(r){
  const FM=FORMS[r.herr],n=UI.fp||Math.max(1,Math.min(8,r.paso)),S=FM.p[n]||{t:'',f:[]},d=(r.pasos||{})[n]||{};
  const chips=[1,2,3,4,5,6,7,8].map(k=>{const q=pasoFill(r,k),ph=FASE(k);return `<button class="${k===n?'on':''}" onclick="UI.fp=${k};renderFicha()" style="${k===n?'background:'+FC[ph]+';border-color:'+FC[ph]:''}">${k}${q>=1?' ✓':q>0?' ◐':''}</button>`}).join('');
@@ -581,20 +697,21 @@ function formCard(r){
  if(S.link==='ind')extra=`<div class="form" style="margin-top:10px"><div class="f2"><label class="lab">Indicador (unidad)</label><input id="ind_u" type="text" value="${esc2(r.ind.u)}"></div><div class="f2"><label class="lab">Línea base</label><input id="ind_b" type="number" step="any" value="${r.base}"></div><div class="f2"><label class="lab">Meta</label><input id="ind_m" type="number" step="any" value="${r.meta}"></div></div>`;
  if(S.link&&S.link.startsWith('acc:')){const t=S.link.slice(4),L=r.acc.filter(a=>a.tipo===t||(t==='Contramedida'&&false));
   extra=`<div style="margin-top:12px"><div class="rowh"><b>${t==='Contención'?'Medidas de contención':t==='Contramedida'?'Contramedidas':'Acciones de estandarización'}</b><span class="mut">${L.length} registradas</span><button class="btn ghost sp" onclick="openAcc('${t}')">+ Acción</button></div>
-   <div class="tw"><table><thead><tr><th>ID</th><th>Acción</th><th>Responsable</th><th>Compromiso</th><th>Avance</th><th>Estado</th></tr></thead><tbody>${L.map(a=>`<tr><td class="nw"><b>${a.id}</b></td><td>${a.txt}</td><td class="mut nw">${AVH(a.respE,'sm')}${a.resp}</td><td class="nw">${fd(a.comp)}</td><td>${a.av}%</td><td>${tag(a.est,ESTC[a.est])}</td></tr>`).join('')||'<tr><td colspan="6" class="mut">Sin acciones de este tipo todavía.</td></tr>'}</tbody></table></div></div>`}
+   <div class="tw"><table><thead><tr><th>ID</th><th>Acción</th><th>Responsable</th><th>Compromiso</th><th>Avance</th><th>Estado</th><th></th></tr></thead><tbody>${L.map(a=>`<tr><td class="nw"><b>${a.id}</b></td><td>${a.txt}</td><td class="mut nw">${AVH(a.respE,'sm')}${a.resp}</td><td class="nw">${fd(a.comp)}</td><td>${a.av}%</td><td>${tag(a.est,ESTC[a.est])}</td><td class="nw r">${accBtns(r.acc.indexOf(a))}</td></tr>`).join('')||'<tr><td colspan="7" class="mut">Sin acciones de este tipo todavía.</td></tr>'}</tbody></table></div></div>`}
  if(S.link==='med')extra=`<div style="margin-top:12px"><div class="rowh"><b>Mediciones del indicador</b><span class="mut">${(r.meds||[]).length} registradas</span><button class="btn ghost sp" onclick="openMed()">+ Medición</button></div>${(r.meds||[]).length?`<div class="tw"><table><thead><tr><th>Fecha</th><th class="r">Valor (${r.ind.u})</th><th>Nota</th></tr></thead><tbody>${r.meds.map(m=>`<tr><td>${fd(D(m.fecha))}</td><td class="r">${fv(+m.valor)}</td><td class="mut">${m.nota||''}</td></tr>`).join('')}</tbody></table></div>`:''}</div>`;
  const warn=S.f.some(x=>x[0]==='val')&&d.val==='nada'?'<div class="note w">Sin mejoras: conviene reformular el análisis con un A4 o A3. Cambiá la herramienta desde el botón de abajo conservando los datos.</div>':'';
  return `<div class="card"><h3>Formato ${HN[r.herr]} ${tag(FM.cod,HC[r.herr])} <small>se completa paso a paso · ${Math.round([1,2,3,4,5,6,7,8].reduce((s,k)=>s+pasoFill(r,k),0)/8*100)}% de los campos cargados</small></h3>
   <div class="sub" style="flex-wrap:wrap">${chips}</div>
   <div class="mut" style="margin-bottom:8px"><b>Paso ${n} · ${S.t}</b> ${tag(FASE(n)+' · '+FN[FASE(n)],FC[FASE(n)])}</div>
   ${S.nota?`<div class="note">${S.nota}</div>`:''}
-  <div class="form">${S.f.map(fld).join('')}</div>${warn}${extra}
+  ${S.custom==='desglose'?desgCard(r):''}${n===4?`<div id="ishi" style="margin-bottom:12px">${ishiSVG(r)}</div>`:''}<div class="form">${S.f.map(fld).join('')}</div>${warn}${extra}
   <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" onclick="saveFormPaso(${n})">Guardar paso ${n}</button></div></div>`;
 }
 const esc2=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-function fpSet(n,k,v){const r=cur();r.pasos=r.pasos||{};r.pasos[n]=r.pasos[n]||{};r.pasos[n][k]=v;r._dirty=n}
+function fpSet(n,k,v){const r=cur();r.pasos=r.pasos||{};r.pasos[n]=r.pasos[n]||{};r.pasos[n][k]=v;r._dirty=n;if(n===4)updIshi()}
 async function saveFormPaso(n){
  const r=cur();const S=(FORMS[r.herr].p[n]||{});
+ if(S.custom==='desglose'){const inf=desgInfo(r);const d=dsg();d.pp=inf.pp;d.dg=inf.lv.map(L=>'Nivel '+(L.i+1)+' por '+(L.dim||'—')+': '+L.items.filter(x=>x.n).map(x=>x.n+' '+fq(x.c)).join(', ')).join(' | ')}
  try{
   if(S.link==='ind'){const u=$('#ind_u').value,b=+$('#ind_b').value,m=+$('#ind_m').value;
    if(LIVE){putRdp(await api('PATCH','/rdp/'+r.id,{indicador_unidad:u,linea_base:b,meta:m}))}else{r.ind.u=u;r.base=b;r.meta=m;r.actual=r.paso<7?b:r.actual;recalc(r)}}
@@ -619,6 +736,8 @@ function docHTML(r){
   if(S.link&&S.link.startsWith('acc:'))x=accT(S.link.slice(4));
   if(S.link==='med')x=medT();
   if(n===1)x+=`<div class="sb">Impacto económico (pérdida anual)</div>${lossT()}`;
+  if(S.custom==='desglose')x=desgDoc(r)+x;
+  if(n===4)x=`<div style="padding:4px">${ishiSVG(r)}</div>`+x;
   return `<div class="blk"><div class="bh" style="background:${col(n)}">${n} · ${HX(S.t)} <span>${FASE(n)} · ${FN[FASE(n)]}</span></div>${S.nota?`<div class="nt">${HX(S.nota)}</div>`:''}${rows?`<table class="f">${rows}</table>`:''}${x}</div>`};
  const idx=herr=>herr==='5PQ'?[[1,2,3,4],[5,6,7,8]]:[[1,2,3,4,5],[6,7,8]];
  const cols=idx(r.herr).map(L=>`<td class="col">${L.map(block).join('')}</td>`).join('');
