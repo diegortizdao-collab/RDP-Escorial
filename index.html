@@ -349,23 +349,47 @@ const iso=d=>d.toISOString().slice(0,10);
 
 /* ============ CREAR PÉRDIDA (estándar o libre) ============ */
 let PL={};
-function openPL(tgt){PL={tgt,std:true,cid:MAT[0].id,concepto:'',unidad:'',costo:0,cant:0,fuente:''};plRender()}
-const plCost=()=>PL.std?costoAt(MAT.find(x=>x.id==PL.cid),TODAY):(+PL.costo||0);
+function openPL(tgt){PL={tgt,ei:null,std:true,cid:MAT[0].id,concepto:'',unidad:'',costo:0,cant:0,desp:'',fuente:'',motivo:''};plRender()}
+const plLine=(tgt,i)=>tgt==='p0'?P0.lines[i]:(RDPS.find(x=>x.id===tgt)||{lines:[]}).lines[i];
+function plBtns(tgt,i){return `<button class="btn ghost" style="padding:3px 8px" title="Editar" onclick="openPLEdit('${tgt}',${i})">✎</button> <button class="btn ghost" style="padding:3px 8px;color:#E5484D" title="Eliminar" onclick="plAskDel('${tgt}',${i})">🗑</button>`}
+function openPLEdit(tgt,i){
+ const l=plLine(tgt,i);if(!l)return;
+ PL={tgt,ei:i,std:l.mode==='std',cid:l.cid||MAT[0].id,cid0:l.cid,costo0:l.costo,concepto:l.mode==='std'?'':l.concepto,unidad:l.mode==='std'?'':l.unidad,costo:l.mode==='std'?0:l.costo,cant:l.antes,desp:l.desp==null?'':l.desp,fuente:l.mode==='std'?'':l.fuente,motivo:''};plRender();
+}
+// Un valor estándar queda congelado con el costo vigente al cargarlo; solo se renueva si se cambia el concepto.
+const plCost=()=>PL.std?((PL.ei!=null&&PL.cid==PL.cid0)?PL.costo0:costoAt(MAT.find(x=>x.id==PL.cid),TODAY)):(+PL.costo||0);
 function plUpd(){const e=$('#pltot');if(e)e.textContent=fmtUS((+PL.cant||0)*plCost())}
 function plRender(){
- const c=MAT.find(x=>x.id==PL.cid);
- openModal(`<h3 style="font-size:20px;margin:0 0 2px">Crear pérdida</h3><div class="mut" style="margin-bottom:12px">Completá la información de la pérdida (cantidades anuales).</div>
- <label class="sw"><input type="checkbox" ${PL.std?'checked':''} onchange="PL.std=this.checked;plRender()"><b>Valores estándar</b><span class="mut">· matriz de costos de Escorial</span></label>
+ const c=MAT.find(x=>x.id==PL.cid),ed=PL.ei!=null,real=ed&&PL.tgt!=='p0';
+ openModal(`<h3 style="font-size:20px;margin:0 0 2px">${ed?'Editar pérdida':'Crear pérdida'}</h3><div class="mut" style="margin-bottom:12px">${ed?'Podés corregir la pérdida en cualquier paso del RDP, por ejemplo si la investigación descubre un costo asociado que no estaba previsto. El cambio queda registrado.':'Completá la información de la pérdida (cantidades anuales).'}</div>
+ <label class="sw"><input type="checkbox" ${PL.std?'checked':''} ${ed?'disabled':''} onchange="PL.std=this.checked;plRender()"><b>Valores estándar</b><span class="mut">· matriz de costos de Escorial</span></label>
  <div class="lab" style="margin-top:12px">1 · Concepto</div>
- ${PL.std?`<select onchange="PL.cid=this.value;plRender()">${MAT.map(m=>`<option value="${m.id}" ${m.id==PL.cid?'selected':''}>${m.concepto}</option>`).join('')}</select><div class="mut" style="font-size:12px;margin-top:3px">Unidad: ${c.unidad} · vigente desde ${fd(vigente(c).desde)} · fuente: ${c.fuente} · el valor no se edita acá</div>`
- :`<input type="text" maxlength="30" placeholder="¿Cuál es el concepto de la pérdida?" value="${PL.concepto}" oninput="PL.concepto=this.value"><div class="mut r" style="font-size:12px">máximo 30 caracteres</div>`}
+ ${PL.std?`<select onchange="PL.cid=this.value;plRender()">${MAT.map(m=>`<option value="${m.id}" ${m.id==PL.cid?'selected':''}>${m.concepto}</option>`).join('')}</select><div class="mut" style="font-size:12px;margin-top:3px">Unidad: ${c.unidad} · ${ed&&PL.cid==PL.cid0?'costo congelado al cargarla':'vigente desde '+fd(vigente(c).desde)} · fuente: ${c.fuente} · el valor no se edita acá</div>`
+ :`<input type="text" maxlength="30" placeholder="¿Cuál es el concepto de la pérdida?" value="${esc2(PL.concepto)}" oninput="PL.concepto=this.value"><div class="mut r" style="font-size:12px">máximo 30 caracteres</div>`}
  <div class="form" style="margin-top:10px"><div class="f2"><label class="lab">2 · Cantidad anual</label><input type="number" min="0" placeholder="0" value="${PL.cant||''}" oninput="PL.cant=+this.value;plUpd()"></div>
- <div class="f2"><label class="lab">Unidad</label>${PL.std?`<input type="text" disabled value="${c.unidad}">`:`<input type="text" maxlength="8" placeholder="Hs, Kg, U…" value="${PL.unidad}" oninput="PL.unidad=this.value">`}</div></div>
+ <div class="f2"><label class="lab">Unidad</label>${PL.std?`<input type="text" disabled value="${c.unidad}">`:`<input type="text" maxlength="8" placeholder="Hs, Kg, U…" value="${esc2(PL.unidad)}" oninput="PL.unidad=this.value">`}</div></div>
  <div class="lab" style="margin-top:10px">3 · Pérdida unitaria ($)</div>
  ${PL.std?`<input type="text" disabled value="${plCost().toLocaleString('es-AR')}">`:`<input type="number" min="0" placeholder="0" value="${PL.costo||''}" oninput="PL.costo=+this.value;plUpd()">
- <div class="lab" style="margin-top:10px">Criterio de cálculo (queda registrado)</div><textarea rows="2" placeholder="Ej.: costo indirecto = horas de supervisión × costo hora indirecta" oninput="PL.fuente=this.value">${PL.fuente}</textarea>`}
+ <div class="lab" style="margin-top:10px">Criterio de cálculo (queda registrado)</div><textarea rows="2" placeholder="Ej.: costo indirecto = horas de supervisión × costo hora indirecta" oninput="PL.fuente=this.value">${esc2(PL.fuente)}</textarea>`}
+ ${real?`<div class="lab" style="margin-top:10px">Cantidad anual «después» medida <span class="mut" style="text-transform:none;font-weight:400">· opcional; si la dejás vacía se deriva del indicador</span></div><input type="number" min="0" placeholder="vacío = derivar del indicador" value="${PL.desp}" oninput="PL.desp=this.value">
+ <div class="lab" style="margin-top:10px">Motivo del cambio <span class="mut" style="text-transform:none;font-weight:400">· opcional, queda en el registro</span></div><input type="text" maxlength="300" placeholder="Ej.: la investigación mostró un costo de retrabajo no considerado" value="${esc2(PL.motivo)}" oninput="PL.motivo=this.value">`:''}
  <div class="lab" style="margin-top:12px">Pérdida total <span class="mut" style="text-transform:none;font-weight:400">· cálculo automático</span></div><div class="tot" id="pltot">${fmtUS((+PL.cant||0)*plCost())}</div>
- <div style="text-align:right;margin-top:12px"><button class="btn alt" onclick="plSave()">Crear</button></div>`);
+ <div style="text-align:right;margin-top:12px"><button class="btn alt" onclick="plSave()">${ed?'Guardar cambios':'Crear'}</button></div>`);
+}
+function plAskDel(tgt,i){
+ const l=plLine(tgt,i);if(!l)return;PL={tgt,di:i,motivo:''};
+ openModal(`<h3 style="font-size:20px;margin:0 0 6px">Eliminar pérdida</h3><div style="margin-bottom:8px">¿Eliminar <b>${esc2(l.concepto)}</b> (${fmtUS(l.antes*l.costo)} por año)? Esto cambia el impacto y el ahorro del RDP.</div>
+ ${tgt!=='p0'?`<div class="lab">Motivo <span class="mut" style="text-transform:none;font-weight:400">· opcional, queda en el registro</span></div><input type="text" maxlength="300" placeholder="Ej.: estaba duplicada" oninput="PL.motivo=this.value">`:''}
+ <div style="text-align:right;margin-top:12px"><button class="btn ghost" onclick="closeModal()">Cancelar</button> <button class="btn" style="background:#E5484D" onclick="plDel()">Eliminar</button></div>`);
+}
+async function plDel(){
+ const tgt=PL.tgt,i=PL.di,l=plLine(tgt,i);if(!l)return;
+ try{
+  if(tgt==='p0')P0.lines.splice(i,1);
+  else if(LIVE)putRdp(await api('DELETE','/perdidas/'+l.id+(PL.motivo?'?motivo='+encodeURIComponent(PL.motivo):'')));
+  else{const r=RDPS.find(x=>x.id===tgt);r.lines.splice(i,1);recalc(r)}
+  closeModal();toast('Pérdida eliminada');render();
+ }catch(e){toast(e.message)}
 }
 
 /* ============ ACCIÓN CON AVISO POR CORREO ============ */
@@ -654,9 +678,9 @@ function calcCard(r){
  const pay=r.ahorroReal>0?r.costo/r.ahorroReal*12:null;
  const nt=!r.medido?['','El ahorro realizado se calcula al llegar al paso 7 (Monitorear), con la medición del indicador.']:r.ahorroReal>r.costo?['ok','Se recupera la inversión de '+fmtK(r.costo)+' en '+pay.toFixed(1).replace('.',',')+' meses.']:['w','Todavía no se recupera la inversión de '+fmtK(r.costo)+'.'];
  return `<div class="card"><h3>Calculadora de impacto · antes y después <small>valores anualizados</small><button class="btn alt" style="margin-left:auto" onclick="openPL('${r.id}')">+ Pérdida</button></h3>
- <div class="cols2"><div class="tw"><table><thead><tr><th>Tipo</th><th>Concepto</th><th>Un.</th><th class="r">Pérd. unit.</th><th class="r">Cant. antes</th><th class="r">Antes</th><th class="r">Cant. después</th><th class="r">Después</th><th class="r">Ahorro</th></tr></thead><tbody>
- ${ln.map(({l,a,dq,d})=>`<tr><td>${tag(l.mode==='std'?'Estándar':'Libre',l.mode==='std'?'#2E9BD6':'#F28C28')}</td><td title="${esc2(l.mode==='std'?'Matriz de costos':l.fuente)}">${l.concepto}</td><td>${l.unidad}</td><td class="r nw">${fmtUS(l.costo)}</td><td class="r">${fv(l.antes)}</td><td class="r nw">${fmtK(a)}</td><td class="r">${dq!=null?fv(dq):'—'}</td><td class="r nw">${d!=null?fmtK(d):'—'}</td><td class="r nw"><b>${d!=null?fmtK(a-d):'—'}</b></td></tr>`).join('')||'<tr><td colspan="9" class="mut">Todavía no cargaste pérdidas.</td></tr>'}
- </tbody><tfoot><tr class="tfoot"><td colspan="5" class="r">Total</td><td class="r nw">${fmtK(antes)}</td><td></td><td class="r nw">${desR!==null?fmtK(desR):'—'}</td><td class="r nw">${desR!==null?fmtK(antes-desR):'—'}</td></tr></tfoot></table>
+ <div class="cols2"><div class="tw"><table><thead><tr><th>Tipo</th><th>Concepto</th><th>Un.</th><th class="r">Pérd. unit.</th><th class="r">Cant. antes</th><th class="r">Antes</th><th class="r">Cant. después</th><th class="r">Después</th><th class="r">Ahorro</th><th></th></tr></thead><tbody>
+ ${ln.map(({l,a,dq,d},ix)=>`<tr><td>${tag(l.mode==='std'?'Estándar':'Libre',l.mode==='std'?'#2E9BD6':'#F28C28')}</td><td title="${esc2(l.mode==='std'?'Matriz de costos':l.fuente)}">${l.concepto}</td><td>${l.unidad}</td><td class="r nw">${fmtUS(l.costo)}</td><td class="r">${fv(l.antes)}</td><td class="r nw">${fmtK(a)}</td><td class="r">${dq!=null?fv(dq):'—'}</td><td class="r nw">${d!=null?fmtK(d):'—'}</td><td class="r nw"><b>${d!=null?fmtK(a-d):'—'}</b></td><td class="nw r">${plBtns(r.id,ix)}</td></tr>`).join('')||'<tr><td colspan="10" class="mut">Todavía no cargaste pérdidas.</td></tr>'}
+ </tbody><tfoot><tr class="tfoot"><td colspan="5" class="r">Total</td><td class="r nw">${fmtK(antes)}</td><td></td><td class="r nw">${desR!==null?fmtK(desR):'—'}</td><td class="r nw">${desR!==null?fmtK(antes-desR):'—'}</td><td></td></tr></tfoot></table>
  <div class="note ${nt[0]}">${nt[1]}</div>
  <div class="note">${std.toFixed(0)}% de la pérdida base proviene de valores estándar de la matriz; el resto son conceptos libres (p. ej. costos indirectos).${meas?' Las cantidades «después» son valores medidos.':''}</div></div>
  <div><div class="ch" style="height:260px"><canvas id="c8"></canvas></div></div></div></div>`;
@@ -670,12 +694,21 @@ function drawBA(r){
 
 /* ============ ALTAS Y CAMBIOS (API o demo) ============ */
 async function plSave(){
- const c=MAT.find(x=>x.id==PL.cid);
+ const c=MAT.find(x=>x.id==PL.cid),ed=PL.ei!=null;
  if(!(PL.cant>0))return toast('Cargá una cantidad mayor a 0');
  if(!PL.std&&(!PL.concepto.trim()||!(PL.costo>0)))return toast('Completá concepto y pérdida unitaria');
  if(!PL.std&&!PL.fuente.trim())return toast('Indicá el criterio de cálculo de la pérdida libre');
+ const desp=PL.desp===''||PL.desp==null?null:+PL.desp;
  const l=PL.std?{mode:'std',cid:c.id,concepto:c.concepto,unidad:c.unidad,costo:plCost(),antes:PL.cant,desp:null,fuente:'Matriz de costos'}:{mode:'libre',cid:null,concepto:PL.concepto.trim(),unidad:PL.unidad||'U',costo:+PL.costo,antes:PL.cant,desp:null,fuente:PL.fuente};
  try{
+  if(ed){
+   const old=plLine(PL.tgt,PL.ei);
+   if(PL.tgt==='p0'){P0.lines[PL.ei]={...l,desp:null}}
+   else if(LIVE){const b={cant_antes:l.antes,cant_despues:desp,motivo:PL.motivo};
+    if(l.mode==='std')b.matriz_id=l.cid;else Object.assign(b,{concepto:l.concepto,unidad:l.unidad,costo_unit:l.costo,fuente:l.fuente});
+    putRdp(await api('PATCH','/perdidas/'+old.id,b))}
+   else{const r=RDPS.find(x=>x.id===PL.tgt);r.lines[PL.ei]={...l,id:old.id,desp};recalc(r)}
+   closeModal();toast('Pérdida actualizada');render();return}
   if(PL.tgt==='p0')P0.lines.push(l);
   else if(LIVE)putRdp(await api('POST','/rdp/'+PL.tgt+'/perdidas',{modo:l.mode,matriz_id:l.cid,concepto:l.concepto,unidad:l.unidad,costo_unit:l.costo,cant_antes:l.antes,fuente:l.fuente}));
   else{const r=RDPS.find(x=>x.id===PL.tgt);r.lines.push(l);recalc(r)}
@@ -790,7 +823,7 @@ function renderP0(){
   <div style="margin-top:12px" class="form"><div class="f2"><label class="lab">¿Existe un estándar?</label>${yn('exs')}</div><div class="f2"><label class="lab">¿Se sigue?</label>${yn('cum')}</div><div class="f2"><label class="lab">¿Proceso estable?</label>${yn('est')}</div></div>
   <div class="note ${kz[0]}">${kz[1]}</div></div>
  <div class="card"><h3>Pérdida anual estimada <small>el valor «antes» que se compara al cierre</small><button class="btn alt" style="margin-left:auto" onclick="openPL('p0')">+ Pérdida</button></h3>
-  <div class="tw"><table><thead><tr><th>Tipo</th><th>Concepto</th><th>Un.</th><th class="r">Pérdida unitaria</th><th class="r">Cantidad anual</th><th class="r">Pérdida total</th></tr></thead><tbody>${P0.lines.map(l=>`<tr><td>${tag(l.mode==='std'?'Estándar':'Libre',l.mode==='std'?'#2E9BD6':'#F28C28')}</td><td>${l.concepto}</td><td>${l.unidad}</td><td class="r">${fmtUS(l.costo)}</td><td class="r">${fv(l.antes)}</td><td class="r"><b>${fmtUS(l.antes*l.costo)}</b></td></tr>`).join('')||'<tr><td colspan="6" class="mut">Todavía no cargaste pérdidas.</td></tr>'}</tbody><tfoot><tr class="tfoot"><td colspan="5" class="r">Pérdida anual total</td><td class="r">${fmtUS(_s(P0.lines,l=>l.antes*l.costo))}</td></tr></tfoot></table></div>
+  <div class="tw"><table><thead><tr><th>Tipo</th><th>Concepto</th><th>Un.</th><th class="r">Pérdida unitaria</th><th class="r">Cantidad anual</th><th class="r">Pérdida total</th><th></th></tr></thead><tbody>${P0.lines.map((l,ix)=>`<tr><td>${tag(l.mode==='std'?'Estándar':'Libre',l.mode==='std'?'#2E9BD6':'#F28C28')}</td><td>${l.concepto}</td><td>${l.unidad}</td><td class="r">${fmtUS(l.costo)}</td><td class="r">${fv(l.antes)}</td><td class="r"><b>${fmtUS(l.antes*l.costo)}</b></td><td class="nw r">${plBtns('p0',ix)}</td></tr>`).join('')||'<tr><td colspan="7" class="mut">Todavía no cargaste pérdidas.</td></tr>'}</tbody><tfoot><tr class="tfoot"><td colspan="5" class="r">Pérdida anual total</td><td class="r">${fmtUS(_s(P0.lines,l=>l.antes*l.costo))}</td><td></td></tr></tfoot></table></div>
   <div class="note">Usá <b>valores estándar</b> de la matriz de costos o un <b>concepto libre</b> (p. ej. costos indirectos que la matriz no contempla). Los libres quedan marcados como tales en el cálculo.</div></div>
  <div class="card"><h3>Priorización <small>criterios del taller de RDP · decide el equipo por consenso</small></h3>
   <div class="form">${crit.map((c,i)=>`<div class="f2"><label class="lab">${c}</label><select onchange="P0.s[${i}]=+this.value;renderP0()">${[1,2,3,4,5].map(v=>`<option ${P0.s[i]===v?'selected':''}>${v}</option>`).join('')}</select></div>`).join('')}
