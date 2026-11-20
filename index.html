@@ -555,7 +555,8 @@ async function boot(){
 const W5H2=[['que','¿Qué? · el problema','area'],['donde','¿Dónde?','text'],['cuando','¿Cuándo?','text'],['quien','¿Quién?','text'],['cuanto','¿Cuánto?','text'],['como','¿Cómo se detectó?','text'],['porque','¿Por qué es un problema?','area']];
 const ISH=[['mano','Mano de obra','area'],['maq','Máquina','area'],['met','Método','area'],['mat','Material','area'],['med','Medición','area'],['amb','Medio ambiente','area']];
 const PQ=(p)=>[1,2,3,4,5].map(i=>[p+i,'¿Por qué? '+i,'text']).concat([[p+'raiz','Causa raíz','area']]);
-const VALID=[['','— Elegí —'],['total','Mejoró totalmente → estandarizar y compartir'],['parcial','Mejoró parcialmente → reformular el 5 Porqués'],['nada','Sin mejoras → analizar con A4 / A3']];
+const VALID=[['','— Elegí —'],['total','Mejoró totalmente → estandarizar y compartir'],['parcial','Mejoró parcialmente → reformular el análisis'],['nada','Sin mejoras → volver a la causa raíz o escalar el formato']];
+const ESTT=[['','— Elegí —'],['nuevo','Nuevo estándar creado'],['act','Estándar vigente actualizado'],['na','N/A']];
 const FORMS={
  A3:{cod:'FR-MCO-010',p:{
   1:{t:'Clarificar el problema (5W + 2H)',f:W5H2,link:'acc:Contención'},
@@ -564,26 +565,12 @@ const FORMS={
   4:{t:'Análisis de causa raíz (Ishikawa + 5 Porqués)',f:ISH.concat(PQ('a'))},
   5:{t:'Contramedidas',f:[['crit','Criterio de selección (velocidad · efectividad · costo)','area']],link:'acc:Contramedida'},
   6:{t:'Implementar',f:[['nota','Observaciones de la implementación','area']],link:'acc:Contramedida'},
-  7:{t:'Monitorear los resultados',f:[['res','Resultado frente a la situación objetivo','area'],['concl','Conclusión: ¿se logró el objetivo?','area']],link:'med'},
-  8:{t:'Estandarizar y compartir',f:[['est','Estándar actualizado (documento / código)','text'],['yok','Yokoten · dónde más se replica','area'],['lec','Lecciones aprendidas','area']],link:'acc:Estandarización'}}},
- A4:{cod:'FR-MCO-004',p:{
-  1:{t:'Definir el problema (5W + 2H) y contención',f:W5H2,link:'acc:Contención'},
-  2:{t:'Desglosar el problema',custom:'desglose',f:[]},
-  3:{t:'Objetivo',f:[['obj','Objetivo (qué, cuánto y para cuándo)','area']],link:'ind'},
-  4:{t:'Causa raíz (Ishikawa + 5 Porqués)',f:ISH.concat(PQ('a'))},
-  5:{t:'Contramedidas',f:[['crit','Criterio de selección','area']],link:'acc:Contramedida'},
-  6:{t:'Implementar',f:[['nota','Observaciones','area']],link:'acc:Contramedida'},
-  7:{t:'Confirmar y validar',f:[['res','Resultado frente a la situación objetivo','area'],['concl','Validación: ¿se logró el objetivo?','area']],link:'med'},
-  8:{t:'Estandarizar y compartir',f:[['est','Estándar actualizado','text'],['yok','Yokoten · dónde más se replica','area'],['lec','Lecciones aprendidas','area']],link:'acc:Estandarización'}}},
- '5PQ':{cod:'FR-MCO-035',p:{
-  1:{t:'01 · Definir el problema',f:[['que','Problema','area'],['porque','¿Por qué es un problema?','area'],['cuanto','¿Cuánto?','text'],['donde','¿Dónde?','text']],link:'acc:Contención'},
-  2:{t:'Desglose',f:[],nota:'El formato 5 Porqués no desglosa: se define en el paso 1 y se analiza en el paso 4.'},
-  3:{t:'Objetivo',f:[['obj','Objetivo (qué y cuánto)','area']],link:'ind'},
-  4:{t:'02 · Causa raíz (dos cadenas de 5 Porqués)',f:PQ('a').map(x=>[x[0],x[1]+' (cadena 1)',x[2]]).concat(PQ('b').map(x=>[x[0],x[1]+' (cadena 2)',x[2]]))},
-  5:{t:'Contramedidas',f:[],link:'acc:Contramedida'},
-  6:{t:'03 · Avance de contramedidas',f:[['nota','Observaciones','area']],link:'acc:Contramedida'},
-  7:{t:'04 · Validar resultados',f:[['val','Resultado','sel',VALID],['concl','Comentario','area']],link:'med'},
-  8:{t:'Estandarizar y compartir',f:[['est','Estándar actualizado','text'],['yok','Se comparte con','area']],link:'acc:Estandarización'}}}};
+  7:{t:'Monitorear los resultados',f:[['res','Resultado frente a la situación objetivo','area'],['val','Resultado de la validación','sel',VALID],['concl','Conclusión: ¿se logró el objetivo?','area']],link:'med'},
+  8:{t:'Estandarizar y compartir',f:[['esttipo','Estándar','sel',ESTT],['est','Estándar actualizado (documento / código)','text'],['yok','Yokoten · dónde más se replica','area'],['lec','Lecciones aprendidas','area']],link:'acc:Estandarización'}}},
+ A4:{cod:'FR-MCO-004',p:null},
+ '5PQ':{cod:'FR-MCO-035',p:null}};
+/* Se trabaja siempre sobre el formulario A3; A4 y 5 Porqués son formatos de salida (FR-MCO-004 / FR-MCO-035) que reutilizan los mismos datos */
+FORMS.A4.p=FORMS.A3.p;FORMS['5PQ'].p=FORMS.A3.p;
 const pasoFill=(r,n)=>{const S0=FORMS[r.herr].p[n]||{f:[]},F=S0.f,d=(r.pasos||{})[n]||{};if(S0.custom==='desglose'){const ok=desgInfo(r).path.length?1:0;return F.length?(ok+F.filter(x=>String(d[x[0]]||'').trim()).length/F.length)/2:ok}return F.length?F.filter(x=>String(d[x[0]]||'').trim()).length/F.length:0};
 /* ───────── Equipo del RDP y eliminación de RDP de prueba ───────── */
 const eqOf=r=>r.equipo||[];
@@ -755,8 +742,8 @@ function formCard(r){
   extra=`<div style="margin-top:12px"><div class="rowh"><b>${t==='Contención'?'Medidas de contención':t==='Contramedida'?'Contramedidas':'Acciones de estandarización'}</b><span class="mut">${L.length} registradas</span><button class="btn ghost sp" onclick="openAcc('${t}')">+ Acción</button></div>
    <div class="tw"><table><thead><tr><th>ID</th><th>Acción</th><th>Responsable</th><th>Compromiso</th><th>Avance</th><th>Estado</th><th></th></tr></thead><tbody>${L.map(a=>`<tr><td class="nw"><b>${a.id}</b></td><td>${a.txt}</td><td class="mut nw">${AVH(a.respE,'sm')}${a.resp}</td><td class="nw">${fd(a.comp)}</td><td>${a.av}%</td><td>${tag(a.est,ESTC[a.est])}</td><td class="nw r">${accBtns(r.acc.indexOf(a))}</td></tr>`).join('')||'<tr><td colspan="7" class="mut">Sin acciones de este tipo todavía.</td></tr>'}</tbody></table></div></div>`}
  if(S.link==='med')extra=`<div style="margin-top:12px"><div class="rowh"><b>Mediciones del indicador</b><span class="mut">${(r.meds||[]).length} registradas</span><button class="btn ghost sp" onclick="openMed()">+ Medición</button></div>${(r.meds||[]).length?`<div class="tw"><table><thead><tr><th>Fecha</th><th class="r">Valor (${r.ind.u})</th><th>Nota</th></tr></thead><tbody>${r.meds.map(m=>`<tr><td>${fd(D(m.fecha))}</td><td class="r">${fv(+m.valor)}</td><td class="mut">${m.nota||''}</td></tr>`).join('')}</tbody></table></div>`:''}</div>`;
- const warn=S.f.some(x=>x[0]==='val')&&d.val==='nada'?'<div class="note w">Sin mejoras: conviene reformular el análisis con un A4 o A3. Cambiá la herramienta desde el botón de abajo conservando los datos.</div>':'';
- return `<div class="card"><h3>Formato ${HN[r.herr]} ${tag(FM.cod,HC[r.herr])} <small>se completa paso a paso · ${Math.round([1,2,3,4,5,6,7,8].reduce((s,k)=>s+pasoFill(r,k),0)/8*100)}% de los campos cargados</small></h3>
+ const warn=S.f.some(x=>x[0]==='val')&&d.val==='nada'?`<div class="note w">Sin mejoras: volvé a la causa raíz (paso 4)${r.herr==='A3'?'':' o escalá el formato desde «Cambiar herramienta»; se conservan todos los datos'}.</div>`:'';
+ return `<div class="card"><h3>${r.herr==='A3'?'Formato A3':'Formulario de trabajo (base A3)'} ${tag(FORMS.A3.cod,HC.A3)} <small>${r.herr==='A3'?'':'se descarga en el formato <b>'+HN[r.herr]+' · '+FM.cod+'</b> · '}se completa paso a paso · ${Math.round([1,2,3,4,5,6,7,8].reduce((s,k)=>s+pasoFill(r,k),0)/8*100)}% de los campos cargados</small></h3>
   <div class="sub" style="flex-wrap:wrap">${chips}</div>
   <div class="mut" style="margin-bottom:8px"><b>Paso ${n} · ${S.t}</b> ${tag(FASE(n)+' · '+FN[FASE(n)],FC[FASE(n)])}</div>
   ${S.nota?`<div class="note">${S.nota}</div>`:''}
@@ -795,8 +782,27 @@ function docHTML(r){
   if(S.custom==='desglose')x=desgDoc(r)+x;
   if(n===4)x=`<div style="padding:4px">${ishiSVG(r)}</div>`+x;
   return `<div class="blk"><div class="bh" style="background:${col(n)}">${n} · ${HX(S.t)} <span>${FASE(n)} · ${FN[FASE(n)]}</span></div>${S.nota?`<div class="nt">${HX(S.nota)}</div>`:''}${rows?`<table class="f">${rows}</table>`:''}${x}</div>`};
- const idx=herr=>herr==='5PQ'?[[1,2,3,4],[5,6,7,8]]:[[1,2,3,4,5],[6,7,8]];
- const cols=idx(r.herr).map(L=>`<td class="col">${L.map(block).join('')}</td>`).join('');
+ const kv=rows=>`<table class="f">${rows.map(([l,v])=>`<tr><td class="l">${HX(l)}</td><td class="v">${nl(v)}</td></tr>`).join('')}</table>`;
+ const box=(t,n,h)=>`<div class="blk"><div class="bh" style="background:${col(n)}">${HX(t)}</div>${h}</div>`;
+ const W=k=>val(1,k),pqRows=()=>[1,2,3,4,5].map(i=>['¿Por qué? '+i,val(4,'a'+i)]).concat([['Causa raíz',val(4,'araiz')]]);
+ const chk=(v,k,t)=>(v===k?'☑ ':'☐ ')+t;
+ const defSent=()=>[W('que'),W('cuando')&&('Cuándo: '+W('cuando')),W('donde')&&('Dónde: '+W('donde')),W('porque')&&('Por qué es un problema: '+W('porque')),W('cuanto')&&('Cuánto: '+W('cuanto'))].filter(Boolean).join(' · ');
+ const lab=(arr,v)=>(arr.find(z=>z[0]===v)||[0,''])[1];
+ const A4cols=[[box('Clarificar el problema · 5W + 2H',1,kv([['¿Qué pasó?',W('que')],['¿Cuándo?',W('cuando')],['¿Dónde?',W('donde')],['¿Quién lo detectó?',W('quien')],['¿Por qué es un problema?',W('porque')],['¿Cómo pasó? (cómo se detectó)',W('como')],['¿Cuánto?',W('cuanto')]])),
+   box('Definir el problema',1,kv([['Qué + cuándo + dónde + por qué + cuánto',defSent()]])+`<div class="sb">Impacto económico (pérdida anual)</div>${lossT()}`),
+   box('Establecer objetivo',3,kv([['Objetivo',val(3,'obj')]])+indT()),
+   box('Medida de contención',1,accT('Contención')),
+   box('Desglosar el problema',2,desgDoc(r)+kv([['Punto de ocurrencia',val(2,'po')]]))],
+  [box('Entender la causa raíz · Ishikawa + 5 Porqués',4,`<div style="padding:4px">${ishiSVG(r)}</div>`+kv(pqRows())),
+   box('Desarrollar contramedidas',5,kv([['Criterio de selección',val(5,'crit')],['Observaciones de la implementación',val(6,'nota')]])+accT('Contramedida')),
+   box('Confirmar contramedida · validación',7,kv([['Resultado',val(7,'res')],['Validación',lab(VALID,val(7,'val'))],['Conclusión',val(7,'concl')]])+medT()),
+   box('Estandarizar y compartir',8,kv([['Estándar',lab(ESTT,val(8,'esttipo'))],['Estándar actualizado',val(8,'est')],['Yokoten',val(8,'yok')],['Lecciones aprendidas',val(8,'lec')]])+accT('Estandarización'))]];
+ const vv=val(7,'val'),et=val(8,'esttipo');
+ const PQcols=[[box('01 · Definir el problema',1,kv([['PROBLEMA',W('que')],['PORQUÉ',W('porque')],['CUÁNTO',W('cuanto')],['DÓNDE',W('donde')]])+indT()+`<div class="sb">Impacto económico (pérdida anual)</div>${lossT()}`),
+   box('02 · Analizar el problema · 5 Porqués',4,kv(pqRows()))],
+  [box('03 · Avance de contramedidas',6,accT('Contramedida')),
+   box('04 · Validar resultados',7,kv([['RESULTADOS',val(7,'res')],['ESTÁNDAR',[chk(et,'nuevo','Nuevo estándar creado'),chk(et,'act','Estándar vigente actualizado'),chk(et,'na','N/A')].join('   ')],['VALIDACIÓN',[chk(vv,'total','Mejoró totalmente'),chk(vv,'parcial','Mejoró parcialmente'),chk(vv,'nada','Sin mejoras')].join('   ')],['SIGUIENTE PASO',[chk(vv,'total','Se comparte la experiencia'),chk(vv,'parcial','Se reformula el 5 Porqués'),chk(vv,'nada','Se analiza con un A4 / A3')].join('   ')],['REVISADO POR (Group leader) · FECHA',' '],['PDCA APROBADO','☐']]))]];
+ const cols=(r.herr==='5PQ'?PQcols:r.herr==='A4'?A4cols:[[1,2,3,4,5],[6,7,8]].map(L=>L.map(block))).map(L=>`<td class="col">${L.join('')}</td>`).join('');
  const logo=(document.querySelector('.logos img')||{}).src||'';
  const hoy=fd(new Date());
  const css=`@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box}body{font:10px Arial,sans-serif;color:#1d2939;margin:0}table{border-collapse:collapse}
@@ -984,15 +990,23 @@ function whoHTML(){return LIVE?`<div class="who">${AVH(UI.me.email,'',1)}<span>$
 RDPS.forEach(r=>{r.pasos={};r.meds=[];if(r.paso>=1)r.pasos[1]={que:r.titulo,donde:(r.loc.sector?r.loc.sector+' · ':'')+r.loc.area+' ('+r.loc.planta+')'}});
 
 /* ============ PASO 0 ============ */
-const TOOLS=[{k:'5PQ',n:'5 Porqués (PDCA simple)',f:'FR-MCO-035',t:'≈ 1–2 semanas',d:'Causa probable conocida, un solo sector, problema simple. Una o dos cadenas de 5 Porqués con validación de resultados.',e:'Sin mejoras → se escala a A4/A3 conservando los datos.'},
- {k:'A4',n:'A4',f:'FR-MCO-004',t:'≈ 6 semanas',d:'Problema simple a intermedio con causas por desglosar (Ishikawa + 5PQ). Un equipo, ciclo corto, formato del Desafío RDP.',e:'Mejora parcial → reformular el 5PQ o escalar a A3.'},
- {k:'A3',n:'A3',f:'FR-MCO-010',t:'≈ 3 meses',d:'Problema crónico, multicausal o transversal, con inversión o impacto alto. Los 8 pasos completos con desglose DG / PP / PO y monitoreo.',e:'Es el formato completo para dirección.'}];
-function recTool(){const s=P0.causa+P0.alc+P0.inv+P0.cro;return {s,k:s<=1?'5PQ':s<=3?'A4':'A3'}}
+const TOOLS=[{k:'5PQ',n:'5 Porqués (PDCA simple)',f:'FR-MCO-035',t:'≈ 1–2 semanas',d:'Causa conocida o probable, un solo sector, sin inversión y problema puntual. Una cadena de 5 Porqués con validación de resultados.',e:'Sin mejoras → se escala a A4/A3 conservando los datos.'},
+ {k:'A4',n:'A4',f:'FR-MCO-004',t:'≈ 6 semanas',d:'Causa a investigar. También cuando la causa es conocida pero hay inversión, el alcance es un área completa o el problema es crónico. Ishikawa + 5 Porqués, ciclo corto.',e:'Mejora parcial → reformular el 5PQ o escalar a A3.'},
+ {k:'A3',n:'A3',f:'FR-MCO-010',t:'≈ 3 meses',d:'Causa multicausal o desconocida, o problema transversal a varias áreas, gerencias o plantas. Los 8 pasos completos con desglose DG / PP / PO y monitoreo.',e:'Es el formato completo para dirección.'}];
+/* Regla: la causa raíz define el formato (conocida → 5 Porqués · a investigar → A4 · multicausal/desconocida → A3).
+   El alcance, la inversión y la antigüedad solo pueden subirlo. */
+function recTool(){const c=+P0.causa||0,al=+P0.alc||0,iv=+P0.inv||0,cr=+P0.cro||0,s=c+al+iv+cr;let lvl=c;
+ const why=[['causa conocida o probable','causa a investigar','causa multicausal o desconocida'][c]];
+ const up=(m,t)=>{if(lvl<m){lvl=m;why.push(t)}};
+ if(al>=2)up(2,'alcance entre varias áreas, gerencias o plantas');else if(al===1)up(1,'alcance de un área completa');
+ if(iv)up(1,'requiere inversión');
+ if(cr&&lvl<2){lvl++;why.push('problema crónico o recurrente')}
+ return {s,k:['5PQ','A4','A3'][lvl],why}}
 function renderP0(){
  const rec=recTool(),tot=P0.s.reduce((a,b)=>a+lvOf(b),0),sel=P0.tool||rec.k,gl=glob(tot);if(!F0.inicio)F0.inicio=iso(hoyD());
  const gers=Object.keys(ORG);if(!ORG[F0.ger])F0.ger=gers[0]||'';const areas=Object.keys(ORG[F0.ger]||{});if(!areas.includes(F0.area))F0.area=areas[0]||'';const secs=((ORG[F0.ger]||{})[F0.area]||[]).filter(x=>x);if(F0.sector&&!secs.includes(F0.sector))F0.sector='';if(!F0.planta||!PLANTAS.includes(F0.planta))F0.planta=PLANTAS[0]||'';
  if(!F0.lider&&USERS.length)F0.lider=(LIVE&&UI.me?UI.me.email:USERS[0].e);
- const so=(k,list)=>`<select onchange="P0.${k}=this.value;renderP0()">${list.map(([v,l])=>`<option value="${v}" ${String(P0[k])===String(v)?'selected':''}>${l}</option>`).join('')}</select>`;
+ const so=(k,list)=>`<select onchange="P0.${k}=isNaN(this.value)?this.value:+this.value;renderP0()">${list.map(([v,l])=>`<option value="${v}" ${String(P0[k])===String(v)?'selected':''}>${l}</option>`).join('')}</select>`;
  const yn=k=>so(k,[['Sí','Sí'],['No','No']]);
  const crit=['Seguridad · ¿afecta a las personas?','Severidad · ¿afecta al cliente?','Cantidad · ¿está en el Pareto?','Recurrencia · ¿sucede continuamente?'];
  const orig={'Indicador':['Nombre del indicador','Valor actual','Situación objetivo'],'Pareto':['Categoría del Pareto','% del total','Período'],'Impacto (seguridad/cliente)':['Tipo de impacto','Descripción','Evidencia'],'Genba':['Sector observado','Hallazgo','Fecha de la recorrida'],'Reclamo de cliente':['N° de reclamo','Cliente','Cantidad']};
@@ -1033,7 +1047,7 @@ function renderP0(){
   <div class="f2"><label class="lab">¿Requiere inversión?</label>${so('inv',[[0,'No'],[1,'Sí']])}</div>
   <div class="f2"><label class="lab">Antigüedad</label>${so('cro',[[0,'Puntual / reciente'],[1,'Crónico / recurrente']])}</div></div>
   <div class="tools">${TOOLS.map(t=>`<div class="tool ${sel===t.k?'sel':''}" onclick="P0.tool='${t.k}';renderP0()">${rec.k===t.k?'<span class="rec">★ Recomendado</span>':''}<h4>${t.n}</h4><div>${tag(t.f,HC[t.k])} <span class="mut">${t.t} (referencia)</span></div><p>${t.d}</p><p class="mut"><i>${t.e}</i></p></div>`).join('')}</div>
-  <div class="note">Complejidad ${rec.s}/6 → se recomienda <b>${HN[rec.k]}</b>. Elegiste <b>${HN[sel]}</b>.</div>
+  <div class="note">Se recomienda <b>${HN[rec.k]}</b>: ${rec.why.join(' · ')}.<br><span class="mut">Regla: causa conocida → 5 Porqués · a investigar → A4 · multicausal o desconocida → A3. El alcance, la inversión y el carácter crónico pueden subir el formato, nunca bajarlo.</span><br>Elegiste <b>${HN[sel]}</b>.</div>
   ${sel!==rec.k?`<div class="f2" style="margin-top:10px"><label class="lab">Elegiste distinto de lo recomendado: ¿por qué?</label><textarea rows="2" placeholder="Justificación (queda registrada en el RDP)" oninput="P0.just=this.value">${P0.just}</textarea></div>`:''}
   <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" onclick="createRdp()">Crear RDP</button><button class="btn ghost" onclick="toast('En la muestra no se guardan datos')">Guardar borrador</button></div>`,true)}`;
 }
