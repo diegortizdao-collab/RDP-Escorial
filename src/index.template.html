@@ -22,6 +22,8 @@ main{padding:16px 22px 30px;max-width:1500px;margin:0 auto}
 .banner{background:#FFF4E5;border:1px solid #F5D9A8;color:#7A4A00;border-radius:10px;padding:8px 14px;font-size:12.5px;margin-bottom:14px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(11,37,69,.05)}
 .card h3{margin:0 0 10px;font-size:15px;color:var(--navy);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sub{border-top:1px solid var(--line);margin-top:16px;padding-top:12px}
+.stn{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:12px;align-items:center;justify-content:center}.stn.ok{background:#22A06B}
 .card h3 small{font-weight:400;color:var(--mut);font-size:12px}
 .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
 .f{display:flex;flex-direction:column;gap:3px;min-width:128px;flex:1 1 128px;max-width:200px}
@@ -207,7 +209,9 @@ function genAcc(r,i){
  return out;
 }
 const UI={tab:'dash',ger:'',area:'',sector:'',planta:'',herr:'',anio:'',mes:'',paso:null,sel:null,aTipo:'',aEst:'',rol:'Administrador',adm:'usr',fp:null,me:null};
-const P0={lines:[],tool:'',just:'',causa:0,alc:0,inv:0,cro:0,orig:'Indicador',exs:'Sí',cum:'Sí',est:'Sí',s:[3,3,3,3]};
+const LVL=[[1,'Bajo'],[3,'Medio'],[5,'Alto']],lvOf=v=>v>=4?5:v>=2?3:1,glob=t=>t>=14?['Alto',5,'#E5484D']:t>=8?['Medio',3,'#F2A93B']:['Bajo',1,'#2E9BD6'];
+const P0={max:1,open:1,lines:[],tool:'',just:'',causa:0,alc:0,inv:0,cro:0,orig:'Indicador',exs:'Sí',cum:'Sí',est:'Sí',s:[3,3,3,3]};
+function p0Next(n){if(n===1&&(!F0.titulo.trim()||!F0.area))return toast('Completá el título y la ubicación (gerencia, área y planta)');P0.max=Math.max(P0.max,n+1);P0.open=n+1;renderP0();window.scrollTo(0,0)}
 const CH={};
 const $=s=>document.querySelector(s);
 const fmtUS=n=>'$ '+Math.round(n).toLocaleString('es-AR');
@@ -216,6 +220,15 @@ const fd=d=>d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'nu
 const fv=(n)=>n<20?n.toFixed(1).replace('.',','):Math.round(n).toLocaleString('es-AR');
 const sum=(a,f)=>a.reduce((s,x)=>s+f(x),0);
 const tag=(t,c)=>`<span class="tag" style="background:${c}">${t}</span>`;
+/* Plazo de referencia por herramienta: A3 3 meses · A4 1,5 meses · 5 Porqués 3 semanas */
+const PLAZO={A3:{d:90,t:'3 meses'},A4:{d:45,t:'mes y medio'},'5PQ':{d:21,t:'3 semanas'}};
+const hoyD=()=>LIVE?new Date():TODAY;
+function demora(r){const P=PLAZO[r.herr]||PLAZO.A3,fin=(r.cerrado&&r.cierre)?r.cierre:hoyD(),dias=Math.max(0,Math.floor((fin-r.inicio)/864e5)),over=dias-P.d;
+ return {dias,lim:P.d,txt:P.t,over,est:over>0?'demora':(!r.cerrado&&dias>=P.d*0.8)?'riesgo':'ok'}}
+function demoraTag(r){const d=demora(r);
+ if(r.cerrado)return d.over>0?tag('Resuelto con demora · '+d.dias+' d','#E5484D'):tag('Resuelto en '+d.dias+' d','#22A06B');
+ return d.est==='demora'?tag('Demorado +'+d.over+' d · '+d.dias+' d abierto','#E5484D'):d.est==='riesgo'?tag('En riesgo · '+d.dias+' de '+d.lim+' d','#F2A93B'):tag(d.dias+' d abierto · límite '+d.lim+' d','#2E9BD6')}
+async function setApertura(v){if(!v)return;const r=cur();try{if(LIVE)putRdp(await api('PATCH','/rdp/'+r.id,{inicio:v}));else r.inicio=D(v);toast('Fecha de apertura actualizada');render()}catch(e){toast(e.message)}}
 const stepsHTML=p=>'<span class="steps">'+PASOS.map((_,k)=>`<i class="${k<=p?'done':''} ${k===p?'cur':''}" style="${k<=p?'background:'+FC[FASE(k)]:''}" title="Paso ${k} · ${PASOS[k]}"></i>`).join('')+'</span>';
 
 /* ============ FILTROS ============ */
@@ -250,7 +263,7 @@ function renderDash(){
  <div class="card">${filtersHTML()}</div>
  <div class="kpis">
   ${kp('RDP en curso',act,`de ${LS.length} · ${LS.length-act} cerrados`,'linear-gradient(135deg,#0F5C8C,#1778B5)')}
-  ${kp('Ahorro proyectado',fmtK(proy),'anual · si se logra la meta','linear-gradient(135deg,#2E9BD6,#5BB4E5)')}
+  ${kp('Ahorro proyectado',fmtK(proy),'anual · si se alcanza la situación objetivo','linear-gradient(135deg,#2E9BD6,#5BB4E5)')}
   ${kp('Ahorro realizado',fmtK(real),`anualizado · medido en ${LS.filter(r=>r.medido).length} RDP`,'linear-gradient(135deg,#1C8E5F,#22A06B)')}
   ${kp('Neto vs. inversión',fmtK(real-inv),`inversión ${fmtK(inv)}`,'linear-gradient(135deg,#7A3FB0,#8E4EC6)')}
   ${kp('Acciones vencidas',venc,`de ${abiertas} acciones abiertas`,venc?'linear-gradient(135deg,#D63B40,#E5484D)':'linear-gradient(135deg,#1C8E5F,#22A06B)')}
@@ -271,9 +284,9 @@ function renderDash(){
   <div class="card"><h3>Tipo de pérdida (muda) <small>cantidad de RDP</small></h3><div class="ch"><canvas id="c9"></canvas></div></div>
  </div>
  <div class="card"><h3>Listado de RDP ${UI.paso!==null?`<span class="chip" onclick="UI.paso=null;renderDash()">Paso ${UI.paso} · ${PASOS[UI.paso]} ✕</span>`:''}<small>${L.length} resultados · click en una fila para abrir la ficha</small></h3>
-  <div class="tw"><table><thead><tr><th>ID</th><th>Problema</th><th>Planta · Área · Sector</th><th>Herramienta</th><th>Avance (pasos 0–8)</th><th>Fase</th><th class="r">Ahorro proy.</th><th class="r">Ahorro real</th><th>Acciones</th><th>Líder</th>${UI.rol==='Administrador'?'<th></th>':''}</tr></thead><tbody>
+  <div class="tw"><table><thead><tr><th>ID</th><th>Problema</th><th>Planta · Área · Sector</th><th>Herramienta</th><th>Avance (pasos 0–8)</th><th>Fase</th><th class="r">Ahorro proy.</th><th class="r">Ahorro real</th><th>Acciones</th><th>Apertura</th><th>Líder</th>${UI.rol==='Administrador'?'<th></th>':''}</tr></thead><tbody>
   ${L.map(r=>{const v=r.acc.filter(a=>a.est==='Vencida').length,c=r.acc.filter(a=>a.est==='Cerrada').length;const f=FASE(r.paso);
-   return `<tr class="rw" onclick="openRdp('${r.id}')"><td class="nw"><b>${r.id}</b></td><td>${r.titulo}</td><td class="mut">${locTxt(r.loc)}</td><td>${tag(HN[r.herr],HC[r.herr])}</td><td>${stepsHTML(r.paso)} <span class="mut">${r.paso}/8</span></td><td>${r.cerrado?tag('Cerrado','#667085'):tag(f+' · '+FN[f],FC[f])}</td><td class="r nw">${fmtK(r.ahorroProy)}</td><td class="r nw">${r.medido?'<b style="color:#1C8E5F">'+fmtK(r.ahorroReal)+'</b>':'<span class="mut">aún sin medir</span>'}</td><td class="nw">${c}/${r.acc.length}${v?` <span style="color:var(--bad);font-weight:700">· ${v} venc.</span>`:''}</td><td class="mut">${r.lider}</td>${UI.rol==='Administrador'?`<td class="nw"><button class="btn ghost" style="padding:3px 8px;color:#E5484D" title="Eliminar RDP (solo administrador)" onclick="rdpAskDel('${r.id}',event)">🗑</button></td>`:''}</tr>`}).join('')||'<tr><td colspan="11" class="mut">Sin resultados para el filtro elegido.</td></tr>'}
+   return `<tr class="rw" onclick="openRdp('${r.id}')"><td class="nw"><b>${r.id}</b></td><td>${r.titulo}</td><td class="mut">${locTxt(r.loc)}</td><td>${tag(HN[r.herr],HC[r.herr])}</td><td>${stepsHTML(r.paso)} <span class="mut">${r.paso}/8</span></td><td>${r.cerrado?tag('Cerrado','#667085'):tag(f+' · '+FN[f],FC[f])}</td><td class="r nw">${fmtK(r.ahorroProy)}</td><td class="r nw">${r.medido?'<b style="color:#1C8E5F">'+fmtK(r.ahorroReal)+'</b>':'<span class="mut">aún sin medir</span>'}</td><td class="nw">${c}/${r.acc.length}${v?` <span style="color:var(--bad);font-weight:700">· ${v} venc.</span>`:''}</td><td class="nw">${fd(r.inicio)}<br>${demoraTag(r)}</td><td class="mut">${r.lider}</td>${UI.rol==='Administrador'?`<td class="nw"><button class="btn ghost" style="padding:3px 8px;color:#E5484D" title="Eliminar RDP (solo administrador)" onclick="rdpAskDel('${r.id}',event)">🗑</button></td>`:''}</tr>`}).join('')||'<tr><td colspan="12" class="mut">Sin resultados para el filtro elegido.</td></tr>'}
   </tbody></table></div></div>`;
  drawCharts(LS,acts);
 }
@@ -312,17 +325,18 @@ function renderFicha(){
  ${BAN(`<b>Muestra con datos de demostración (simulados).</b>`)}
  <div class="card"><div class="filters"><div class="f" style="max-width:340px;flex:1 1 300px"><label>RDP</label><select onchange="UI.sel=this.value;UI.fp=null;renderFicha()">${RDPS.map(x=>`<option value="${x.id}" ${x.id===r.id?'selected':''}>${x.id} · ${x.titulo}</option>`).join('')}</select></div></div></div>
  <div class="card"><h3>${r.id} · ${r.titulo} ${tag(HN[r.herr],HC[r.herr])} ${r.cerrado?tag('Cerrado','#667085'):tag(f+' · '+FN[f],FC[f])} ${tag('Muda: '+r.muda,MC[MUDAS.indexOf(r.muda)])}</h3>
-  <div class="mut" style="margin-bottom:8px">${locTxt(r.loc)} &nbsp;|&nbsp; ${r.loc.ger||''} &nbsp;|&nbsp; Líder: ${AVH(r.liderEmail,'sm')}${r.lider} &nbsp;|&nbsp; Inicio: ${fd(r.inicio)} &nbsp;|&nbsp; Origen: ${r.origen} (${r.ind.u})</div>
+  <div class="mut" style="margin-bottom:8px">${locTxt(r.loc)} &nbsp;|&nbsp; ${r.loc.ger||''} &nbsp;|&nbsp; Líder: ${AVH(r.liderEmail,'sm')}${r.lider} &nbsp;|&nbsp; Apertura: ${canEditR(r)?`<input type="date" value="${iso(r.inicio)}" onchange="setApertura(this.value)" style="width:auto;padding:1px 6px;display:inline-block">`:fd(r.inicio)} ${demoraTag(r)} &nbsp;|&nbsp; Origen: ${r.origen} (${r.ind.u})</div>
   ${eqLine(r)}
+  ${(()=>{const d=demora(r);return !r.cerrado&&d.est!=='ok'?`<div class="note w" style="margin-bottom:8px">${d.est==='demora'?`Este ${HN[r.herr]} lleva <b>${d.dias} días</b> abierto y supera el plazo de referencia de ${d.txt} (${d.lim} d). Revisá el plan de acciones, los bloqueos o la conveniencia de escalarlo.`:`Este ${HN[r.herr]} lleva <b>${d.dias} días</b> abierto; el plazo de referencia es ${d.txt} (${d.lim} d). Está cerca del límite.`}</div>`:''})()}
   <div class="bandrow"><div style="background:${FC.P};grid-column:1/7">P · Planificar</div><div style="background:${FC.D}">D</div><div style="background:${FC.C}">C</div><div style="background:${FC.A}">A</div></div>
   <div class="big">${PASOS.map((n,p)=>`<div class="bs ${p<r.paso?'done':p===r.paso?'cur':''}" style="${p<=r.paso?'background:'+FC[FASE(p)]:''}"><b>${p<r.paso?'✓':p}</b>${n}</div>`).join('')}</div>${pasoNav(r)}</div>
  ${formCard(r)}
  <div class="cols2">
   <div class="card"><h3>Impacto del problema</h3>
-   <div class="kv"><div><small>Línea base</small><b>${fv(r.base)}</b> <span class="mut">${r.ind.u}</span></div><div><small>Meta</small><b>${fv(r.meta)}</b> <span class="mut">${r.ind.u}</span></div><div><small>Valor actual</small><b>${fv(r.actual)}</b> <span class="mut">${r.ind.u}</span></div></div>
-   <div style="margin:12px 0 4px" class="lab">Brecha cerrada: ${closed.toFixed(0)}% de la meta</div><div class="pb" style="height:12px"><div style="width:${closed}%;background:linear-gradient(90deg,#2E9BD6,#22A06B)"></div></div>
+   <div class="kv"><div><small>Situación inicial</small><b>${fv(r.base)}</b> <span class="mut">${r.ind.u}</span></div><div><small>Situación objetivo</small><b>${fv(r.meta)}</b> <span class="mut">${r.ind.u}</span></div><div><small>Valor actual</small><b>${fv(r.actual)}</b> <span class="mut">${r.ind.u}</span></div></div>
+   <div style="margin:12px 0 4px" class="lab">Brecha cerrada: ${closed.toFixed(0)}% hacia la situación objetivo</div><div class="pb" style="height:12px"><div style="width:${closed}%;background:linear-gradient(90deg,#2E9BD6,#22A06B)"></div></div>
    <div class="kv" style="margin-top:12px"><div><small>Pérdida anual base</small><b>${fmtK(r.P0)}</b></div><div><small>Ahorro proyectado</small><b style="color:var(--navy)">${fmtK(r.ahorroProy)}</b></div><div><small>Ahorro realizado</small><b style="color:#1C8E5F">${r.medido?fmtK(r.ahorroReal):'sin medir'}</b></div><div><small>Inversión</small><b>${fmtK(r.costo)}</b></div><div><small>Neto</small><b>${r.medido?fmtK(neto):'—'}</b></div><div><small>Recupero</small><b>${pay!==null?pay.toFixed(1).replace('.',',')+' meses':'—'}</b></div></div>
-   <div class="note">Ahorro = pérdida antes − pérdida después, con cantidades anualizadas y el costo unitario de la matriz. La cantidad «después» sale de la variación del indicador físico (${r.ind.u}): cantidad antes × valor actual / línea base.</div></div>
+   <div class="note">Ahorro = pérdida antes − pérdida después, con cantidades anualizadas y el costo unitario de la matriz. La cantidad «después» sale de la variación del indicador físico (${r.ind.u}): cantidad antes × valor actual / situación inicial.</div></div>
   <div class="card"><h3>Evolución del indicador <small>${r.ind.u}</small></h3><div class="ch"><canvas id="c7"></canvas></div></div>
  </div>
  ${calcCard(r)}
@@ -493,7 +507,7 @@ function mapRdp(a){
  const r={id:a.id,titulo:a.titulo,loc:{ger:a.gerencia,area:a.area,sector:a.sector,planta:a.planta},herr:a.herramienta,paso:a.paso,inicio:D(a.inicio),
   ind:{u:a.indicador_unidad||'',b:+a.linea_base,m:+a.meta},base:+a.linea_base,meta:+a.meta,actual:+a.actual,P0:+a.perdida_base,costo:+a.inversion,
   ahorroProy:+a.ahorro_proy,ahorroReal:+a.ahorro_real,medido:a.paso>=7,impacto:a.ultima_medicion?D(a.ultima_medicion):(a.paso>=7?TODAY:null),
-  cerrado:a.cerrado,lider:uname(a.lider_email),liderEmail:a.lider_email,equipo:Array.isArray(a.equipo)?a.equipo:[],creadoPor:a.creado_por,origen:a.origen,muda:a.muda,crs:[],justificacion:a.justificacion,
+  cerrado:a.cerrado,lider:uname(a.lider_email),liderEmail:a.lider_email,cierre:a.cierre?D(a.cierre):null,equipo:Array.isArray(a.equipo)?a.equipo:[],creadoPor:a.creado_por,origen:a.origen,muda:a.muda,crs:[],justificacion:a.justificacion,
   lines:(a.perdidas||[]).map(p=>({id:p.id,mode:p.modo,cid:p.matriz_id,concepto:p.concepto,unidad:p.unidad,costo:+p.costo_unit,antes:+p.cant_antes,desp:p.cant_despues==null?null:+p.cant_despues,fuente:p.fuente,calc:p.calculo||{}})),
   acc:(a.acciones||[]).map(x=>({id:x.codigo,_id:x.id,tipo:x.tipo,txt:x.texto,cr:x.causa_raiz||'—',resp:uname(x.resp_email),respE:x.resp_email,ini:D(x.inicio),comp:D(x.compromiso),av:x.avance,est:x.estado,costo:+x.inversion})),
   pasos:old?old.pasos:{},meds:old?old.meds:[],_det:old?old._det:false};
@@ -550,7 +564,7 @@ const FORMS={
   4:{t:'Análisis de causa raíz (Ishikawa + 5 Porqués)',f:ISH.concat(PQ('a'))},
   5:{t:'Contramedidas',f:[['crit','Criterio de selección (velocidad · efectividad · costo)','area']],link:'acc:Contramedida'},
   6:{t:'Implementar',f:[['nota','Observaciones de la implementación','area']],link:'acc:Contramedida'},
-  7:{t:'Monitorear los resultados',f:[['res','Resultado frente a la meta','area'],['concl','Conclusión: ¿se logró el objetivo?','area']],link:'med'},
+  7:{t:'Monitorear los resultados',f:[['res','Resultado frente a la situación objetivo','area'],['concl','Conclusión: ¿se logró el objetivo?','area']],link:'med'},
   8:{t:'Estandarizar y compartir',f:[['est','Estándar actualizado (documento / código)','text'],['yok','Yokoten · dónde más se replica','area'],['lec','Lecciones aprendidas','area']],link:'acc:Estandarización'}}},
  A4:{cod:'FR-MCO-004',p:{
   1:{t:'Definir el problema (5W + 2H) y contención',f:W5H2,link:'acc:Contención'},
@@ -559,7 +573,7 @@ const FORMS={
   4:{t:'Causa raíz (Ishikawa + 5 Porqués)',f:ISH.concat(PQ('a'))},
   5:{t:'Contramedidas',f:[['crit','Criterio de selección','area']],link:'acc:Contramedida'},
   6:{t:'Implementar',f:[['nota','Observaciones','area']],link:'acc:Contramedida'},
-  7:{t:'Confirmar y validar',f:[['res','Resultado frente a la meta','area'],['concl','Validación: ¿se logró el objetivo?','area']],link:'med'},
+  7:{t:'Confirmar y validar',f:[['res','Resultado frente a la situación objetivo','area'],['concl','Validación: ¿se logró el objetivo?','area']],link:'med'},
   8:{t:'Estandarizar y compartir',f:[['est','Estándar actualizado','text'],['yok','Yokoten · dónde más se replica','area'],['lec','Lecciones aprendidas','area']],link:'acc:Estandarización'}}},
  '5PQ':{cod:'FR-MCO-035',p:{
   1:{t:'01 · Definir el problema',f:[['que','Problema','area'],['porque','¿Por qué es un problema?','area'],['cuanto','¿Cuánto?','text'],['donde','¿Dónde?','text']],link:'acc:Contención'},
@@ -736,7 +750,7 @@ function formCard(r){
   if(t==='sel')return `<div class="f2"><label class="lab">${l}</label><select onchange="fpSet(${n},'${k}',this.value);renderFicha()">${o.map(([a,b])=>`<option value="${a}" ${v===a?'selected':''}>${b}</option>`).join('')}</select></div>`;
   return `<div class="f2"><label class="lab">${l}</label><input type="${t==='date'?'date':'text'}" value="${esc2(v)}" oninput="fpSet(${n},'${k}',this.value)"></div>`};
  let extra='';
- if(S.link==='ind')extra=`<div class="form" style="margin-top:10px"><div class="f2"><label class="lab">Indicador (unidad)</label><input id="ind_u" type="text" value="${esc2(r.ind.u)}"></div><div class="f2"><label class="lab">Línea base</label><input id="ind_b" type="number" step="any" value="${r.base}"></div><div class="f2"><label class="lab">Meta</label><input id="ind_m" type="number" step="any" value="${r.meta}"></div></div>`;
+ if(S.link==='ind')extra=`<div class="form" style="margin-top:10px"><div class="f2"><label class="lab">Indicador (unidad)</label><input id="ind_u" type="text" value="${esc2(r.ind.u)}"></div><div class="f2"><label class="lab">Situación inicial</label><input id="ind_b" type="number" step="any" value="${r.base}"></div><div class="f2"><label class="lab">Situación objetivo</label><input id="ind_m" type="number" step="any" value="${r.meta}"></div></div>`;
  if(S.link&&S.link.startsWith('acc:')){const t=S.link.slice(4),L=r.acc.filter(a=>a.tipo===t||(t==='Contramedida'&&false));
   extra=`<div style="margin-top:12px"><div class="rowh"><b>${t==='Contención'?'Medidas de contención':t==='Contramedida'?'Contramedidas':'Acciones de estandarización'}</b><span class="mut">${L.length} registradas</span><button class="btn ghost sp" onclick="openAcc('${t}')">+ Acción</button></div>
    <div class="tw"><table><thead><tr><th>ID</th><th>Acción</th><th>Responsable</th><th>Compromiso</th><th>Avance</th><th>Estado</th><th></th></tr></thead><tbody>${L.map(a=>`<tr><td class="nw"><b>${a.id}</b></td><td>${a.txt}</td><td class="mut nw">${AVH(a.respE,'sm')}${a.resp}</td><td class="nw">${fd(a.comp)}</td><td>${a.av}%</td><td>${tag(a.est,ESTC[a.est])}</td><td class="nw r">${accBtns(r.acc.indexOf(a))}</td></tr>`).join('')||'<tr><td colspan="7" class="mut">Sin acciones de este tipo todavía.</td></tr>'}</tbody></table></div></div>`}
@@ -769,7 +783,7 @@ function docHTML(r){
  const nl=s=>HX(s).replace(/\n/g,'<br>');
  const accT=t=>{const L=r.acc.filter(a=>a.tipo===t);return `<table class="g"><tr><th>ID</th><th>Acción</th><th>CR</th><th>Responsable</th><th>Inicio</th><th>Compromiso</th><th>Avance</th><th>Estado</th></tr>${L.map(a=>`<tr><td>${HX(a.id)}</td><td>${HX(a.txt)}</td><td>${HX(a.cr)}</td><td>${HX(a.resp)}</td><td>${fd(a.ini)}</td><td>${fd(a.comp)}</td><td>${a.av}%</td><td>${HX(a.est)}</td></tr>`).join('')||'<tr><td colspan="8" class="e">Sin acciones registradas.</td></tr>'}</table>`};
  const medT=()=>{const M=r.meds||[];return `<table class="g"><tr><th>Fecha</th><th>Valor (${HX(r.ind.u)})</th><th>Nota</th></tr>${M.map(m=>`<tr><td>${fd(D(m.fecha))}</td><td>${fv(+m.valor)}</td><td>${HX(m.nota||'')}</td></tr>`).join('')||'<tr><td colspan="3" class="e">Sin mediciones registradas.</td></tr>'}</table>`};
- const indT=()=>`<table class="g"><tr><th>Indicador</th><th>Línea base</th><th>Meta</th><th>Valor actual</th></tr><tr><td>${HX(r.ind.u)}</td><td>${fv(r.base)}</td><td>${fv(r.meta)}</td><td>${fv(r.actual)}</td></tr></table>`;
+ const indT=()=>`<table class="g"><tr><th>Indicador</th><th>Situación inicial</th><th>Situación objetivo</th><th>Valor actual</th></tr><tr><td>${HX(r.ind.u)}</td><td>${fv(r.base)}</td><td>${fv(r.meta)}</td><td>${fv(r.actual)}</td></tr></table>`;
  const lossT=()=>`<table class="g"><tr><th>Concepto</th><th>Unidad</th><th>Costo unit.</th><th>Cant. antes</th><th>Cant. después</th><th>Pérdida anual</th><th>Cálculo de la cantidad · criterio</th></tr>${(r.lines||[]).map(l=>`<tr><td>${HX(l.concepto)}</td><td>${HX(l.unidad)}</td><td>${money(l.costo)}</td><td>${fv(l.antes)}</td><td>${l.desp==null?'—':fv(l.desp)}</td><td>${money(l.antes*l.costo)}</td><td>${HX(calcTxt(l))}${l.calc&&l.calc.nota?'<br><i>'+HX(l.calc.nota)+'</i>':''}${calcTxt(l)||(l.calc&&l.calc.nota)?'<br>':''}${HX(l.mode==='std'?'Costo: matriz de costos':l.fuente||'')}</td></tr>`).join('')||'<tr><td colspan="7" class="e">Sin pérdidas cargadas.</td></tr>'}</table>`;
  const block=n=>{const S=P[n];if(!S)return'';
   const rows=S.f.map(x=>{const [k,l,t,o]=x;let v=val(n,k);if(t==='sel'&&o){const f=o.find(z=>z[0]===v);v=f?f[1]:''}return `<tr><td class="l">${HX(l)}</td><td class="v">${nl(v)}</td></tr>`}).join('');
@@ -800,7 +814,7 @@ function docHTML(r){
  <table class="inf"><tr><td class="k">Problema</td><td colspan="5"><b>${HX(r.titulo)}</b></td><td class="k">Estado</td><td>${r.cerrado?'Cerrado':'Paso '+r.paso+' · '+FN[FASE(r.paso)]}</td></tr>
  <tr><td class="k">Gerencia</td><td>${HX(r.loc.ger)}</td><td class="k">Área</td><td>${HX(r.loc.area)}</td><td class="k">Sector · Planta</td><td>${HX((r.loc.sector||'—')+' · '+r.loc.planta)}</td><td class="k">Líder</td><td>${HX(r.lider)}</td></tr>
  <tr><td class="k">Equipo</td><td colspan="7">${eqOf(r).length?eqOf(r).map(m=>HX(m.n)+(m.r?' ('+HX(m.r)+')':'')).join(' · '):'—'}</td></tr>
- <tr><td class="k">Inicio</td><td>${fd(r.inicio)}</td><td class="k">Origen</td><td>${HX(r.origen)}</td><td class="k">Muda</td><td>${HX(r.muda)}</td><td class="k">Indicador</td><td>${fv(r.base)} → ${fv(r.meta)} ${HX(r.ind.u)}</td></tr>
+ <tr><td class="k">Apertura</td><td>${fd(r.inicio)} · ${demora(r).dias} d${demora(r).over>0?' (supera '+PLAZO[r.herr].t+')':''}</td><td class="k">Origen</td><td>${HX(r.origen)}</td><td class="k">Muda</td><td>${HX(r.muda)}</td><td class="k">Indicador</td><td>${fv(r.base)} → ${fv(r.meta)} ${HX(r.ind.u)}</td></tr>
  <tr><td class="k">Impacto</td><td colspan="7">${ahorro}</td></tr></table>
  <table class="main"><tr>${cols}</tr></table>
  <div class="pie">Desarrollado por Mgter. Diego Ortiz — Líder de Mejora Continua | Consultor ISO</div></body></html>`;
@@ -944,24 +958,24 @@ async function valSave(id){
 }
 
 /* ============ CREAR RDP (Paso 0) ============ */
-const F0={equipo:[],titulo:'',ger:'',area:'',sector:'',planta:'',lider:'',unidad:'',base:'',meta:'',muda:'Defectos',det:{}};
+const F0={inicio:'',equipo:[],titulo:'',ger:'',area:'',sector:'',planta:'',lider:'',unidad:'',base:'',meta:'',muda:'Defectos',det:{}};
 async function createRdp(){
  const rec=recTool(),herr=P0.tool||rec.k;
  if(!F0.titulo.trim()||!F0.area)return toast('Completá el título y la ubicación (gerencia, área y planta)');
  const lider=F0.lider||(USERS[0]&&USERS[0].e);
  const body={titulo:F0.titulo.trim(),gerencia:F0.ger,area:F0.area,sector:F0.sector,planta:F0.planta,herramienta:herr,origen:P0.orig,origen_detalle:F0.det,muda:F0.muda,
-  prioridad:{seguridad:P0.s[0],severidad:P0.s[1],cantidad:P0.s[2],recurrencia:P0.s[3],complejidad:rec.s,recomendada:rec.k,estandar:P0.exs,cumple:P0.cum,estable:P0.est},justificacion:P0.just,lider_email:lider,equipo:F0.equipo||[],
+  prioridad:{seguridad:P0.s[0],severidad:P0.s[1],cantidad:P0.s[2],recurrencia:P0.s[3],complejidad:rec.s,recomendada:rec.k,estandar:P0.exs,cumple:P0.cum,estable:P0.est},justificacion:P0.just,lider_email:lider,equipo:F0.equipo||[],inicio:F0.inicio||undefined,
   indicador_unidad:F0.unidad,linea_base:+F0.base||0,meta:+F0.meta||0,
   perdidas:P0.lines.map(l=>({modo:l.mode,matriz_id:l.cid,concepto:l.concepto,unidad:l.unidad,costo_unit:l.costo,cant_antes:l.antes,fuente:l.fuente,calculo:l.calc||{}}))};
  try{
   let id;
   if(LIVE){const a=await api('POST','/rdp',body);putRdp(a);id=a.id}
   else{id='RDP-'+String(RDPS.length+1).padStart(3,'0');
-   const r={id,titulo:body.titulo,loc:{ger:F0.ger,area:F0.area,sector:F0.sector,planta:F0.planta},herr,paso:1,inicio:TODAY,ind:{u:F0.unidad,b:+F0.base,m:+F0.meta},base:+F0.base||0,meta:+F0.meta||0,actual:+F0.base||0,P0:0,costo:0,
+   const r={id,titulo:body.titulo,loc:{ger:F0.ger,area:F0.area,sector:F0.sector,planta:F0.planta},herr,paso:1,inicio:F0.inicio?D(F0.inicio):TODAY,ind:{u:F0.unidad,b:+F0.base,m:+F0.meta},base:+F0.base||0,meta:+F0.meta||0,actual:+F0.base||0,P0:0,costo:0,
     lines:P0.lines.map(l=>({...l})),muda:F0.muda,medido:false,impacto:null,cerrado:false,titulo2:'',lider:uname(lider),liderEmail:lider,equipo:(F0.equipo||[]).map(m=>({...m})),origen:P0.orig,crs:[],acc:[],pasos:{},meds:[],ahorroProy:0,ahorroReal:0};
    recalc(r);RDPS.push(r)}
   UI.sel=id;UI.fp=1;UI.tab='ficha';
-  P0.lines=[];P0.just='';P0.tool='';Object.assign(F0,{equipo:[],titulo:'',base:'',meta:'',unidad:'',det:{}});
+  P0.lines=[];P0.just='';P0.tool='';P0.max=1;P0.open=1;P0.s=[3,3,3,3];Object.assign(F0,{inicio:'',equipo:[],titulo:'',base:'',meta:'',unidad:'',det:{}});
   render();toast('RDP '+id+' creado en el paso 1 · '+HN[herr]);
  }catch(e){toast(e.message)}
 }
@@ -975,41 +989,45 @@ const TOOLS=[{k:'5PQ',n:'5 Porqués (PDCA simple)',f:'FR-MCO-035',t:'≈ 1–2 s
  {k:'A3',n:'A3',f:'FR-MCO-010',t:'≈ 3 meses',d:'Problema crónico, multicausal o transversal, con inversión o impacto alto. Los 8 pasos completos con desglose DG / PP / PO y monitoreo.',e:'Es el formato completo para dirección.'}];
 function recTool(){const s=P0.causa+P0.alc+P0.inv+P0.cro;return {s,k:s<=1?'5PQ':s<=3?'A4':'A3'}}
 function renderP0(){
- const rec=recTool(),tot=P0.s.reduce((a,b)=>a+b,0),sel=P0.tool||rec.k;
+ const rec=recTool(),tot=P0.s.reduce((a,b)=>a+lvOf(b),0),sel=P0.tool||rec.k,gl=glob(tot);if(!F0.inicio)F0.inicio=iso(hoyD());
  const gers=Object.keys(ORG);if(!ORG[F0.ger])F0.ger=gers[0]||'';const areas=Object.keys(ORG[F0.ger]||{});if(!areas.includes(F0.area))F0.area=areas[0]||'';const secs=((ORG[F0.ger]||{})[F0.area]||[]).filter(x=>x);if(F0.sector&&!secs.includes(F0.sector))F0.sector='';if(!F0.planta||!PLANTAS.includes(F0.planta))F0.planta=PLANTAS[0]||'';
  if(!F0.lider&&USERS.length)F0.lider=(LIVE&&UI.me?UI.me.email:USERS[0].e);
  const so=(k,list)=>`<select onchange="P0.${k}=this.value;renderP0()">${list.map(([v,l])=>`<option value="${v}" ${String(P0[k])===String(v)?'selected':''}>${l}</option>`).join('')}</select>`;
  const yn=k=>so(k,[['Sí','Sí'],['No','No']]);
  const crit=['Seguridad · ¿afecta a las personas?','Severidad · ¿afecta al cliente?','Cantidad · ¿está en el Pareto?','Recurrencia · ¿sucede continuamente?'];
- const orig={'Indicador':['Nombre del indicador','Valor actual','Meta'],'Pareto':['Categoría del Pareto','% del total','Período'],'Impacto (seguridad/cliente)':['Tipo de impacto','Descripción','Evidencia'],'Genba':['Sector observado','Hallazgo','Fecha de la recorrida'],'Reclamo de cliente':['N° de reclamo','Cliente','Cantidad']};
+ const orig={'Indicador':['Nombre del indicador','Valor actual','Situación objetivo'],'Pareto':['Categoría del Pareto','% del total','Período'],'Impacto (seguridad/cliente)':['Tipo de impacto','Descripción','Evidencia'],'Genba':['Sector observado','Hallazgo','Fecha de la recorrida'],'Reclamo de cliente':['N° de reclamo','Cliente','Cantidad']};
  const kz=P0.exs==='No'?['w','Sin estándar no hay punto de comparación: primero hay que crear uno (paso 1C). Esto todavía no es un RDP.']:P0.cum==='No'?['w','Existe el estándar pero no se cumple: el incumplimiento es parte del problema. Se puede avanzar, registrándolo en el paso 1.']:P0.est==='No'?['w','El proceso no es estable: conviene estabilizarlo antes de aplicar RDP (el Kaizen solo ocurre sobre procesos estables).']:['ok','Hay estándar, se cumple y el proceso es estable: el problema es candidato a RDP.'];
+ const sec=(n,t,sum,inner,last)=>n>P0.max?'':P0.open===n?`<div class="card"><h3><span class="stn">${n}</span> ${t}</h3>${inner}${last?'':`<div style="margin-top:14px"><button class="btn alt" onclick="p0Next(${n})">Continuar ▶</button></div>`}</div>`:`<div class="card" style="cursor:pointer" onclick="P0.open=${n};renderP0()"><div class="rowh"><h3 style="margin:0"><span class="stn ok">✓</span> ${t}</h3><span class="mut" style="flex:1">${sum}</span><button class="btn ghost sp">Editar</button></div></div>`;
+ const locS=[F0.ger,F0.area,F0.sector].filter(x=>x).join(' › ')+' · '+F0.planta;
+ const s1=esc2(F0.titulo||'—')+' · '+esc2(locS)+' · Apertura '+esc2(F0.inicio),s2=esc2(P0.orig)+' · estándar: '+(P0.exs==='No'?'no existe':P0.cum==='No'?'no se cumple':P0.est==='No'?'proceso inestable':'candidato a RDP'),s3=esc2(F0.unidad||'sin indicador')+': '+esc2(String(F0.base||'—'))+' → '+esc2(String(F0.meta||'—'))+' · pérdida anual '+fmtUS(P0.lines.reduce((a,l)=>a+l.antes*l.costo,0))+' · impacto '+gl[0];
  $('#view').innerHTML=`
  ${BAN(`<b>Muestra del Paso 0.</b> Los campos son orientativos; en la versión real se guardan en la base y alimentan el RDP.`)}
- <div class="card"><h3>Paso 0 · Selección y priorización del problema</h3>
-  <div class="form"><div class="f2"><label class="lab">Problema (título)</label><input type="text" placeholder="Ej.: scrap en línea X" value="${esc2(F0.titulo)}" oninput="F0.titulo=this.value"></div>
+ ${sec(1,'Problema y ubicación',s1,`  <div class="form"><div class="f2"><label class="lab">Problema (título)</label><input type="text" placeholder="Ej.: scrap en línea X" value="${esc2(F0.titulo)}" oninput="F0.titulo=this.value"></div>
   <div class="f2"><label class="lab">Gerencia</label><select onchange="F0.ger=this.value;F0.area='';F0.sector='';renderP0()">${gers.map(x=>`<option ${x===F0.ger?'selected':''}>${x}</option>`).join('')}</select></div>
   <div class="f2"><label class="lab">Área</label><select onchange="F0.area=this.value;F0.sector='';renderP0()">${areas.map(x=>`<option ${x===F0.area?'selected':''}>${x}</option>`).join('')}</select></div>
   <div class="f2"><label class="lab">Sector <small class="mut">(opcional)</small></label><select onchange="F0.sector=this.value"><option value="">— sin sector —</option>${secs.map(x=>`<option ${x===F0.sector?'selected':''}>${x}</option>`).join('')}</select></div>
   <div class="f2"><label class="lab">Planta</label><select onchange="F0.planta=this.value">${PLANTAS.map(x=>`<option ${x===F0.planta?'selected':''}>${x}</option>`).join('')}</select></div>
   <div class="f2"><label class="lab">Líder del RDP</label><select onchange="F0.lider=this.value">${USERS.map(u=>`<option value="${u.e}" ${u.e===F0.lider?'selected':''}>${u.n} ${u.a}</option>`).join('')}</select></div>
   <div class="f2" style="grid-column:1/-1"><label class="lab">Equipo (opcional, se verá en el encabezado del problema)</label><div>${(F0.equipo||[]).length?eqChips(F0.equipo):'<span class="mut">Sin miembros.</span>'} <button class="btn ghost" style="padding:2px 9px" onclick="openEquipo('new')">+ Equipo</button></div></div>
-  <div class="f2"><label class="lab">Tipo de pérdida (muda)</label><select onchange="F0.muda=this.value">${MUDAS.map(m=>`<option ${m===F0.muda?'selected':''}>${m}</option>`).join('')}</select></div></div>
-  <div class="form" style="margin-top:10px"><div class="f2"><label class="lab">Indicador (unidad)</label><input type="text" placeholder="% scrap, min parada/turno…" value="${esc2(F0.unidad)}" oninput="F0.unidad=this.value"></div>
-  <div class="f2"><label class="lab">Línea base</label><input type="number" step="any" value="${F0.base}" oninput="F0.base=this.value"></div>
-  <div class="f2"><label class="lab">Meta</label><input type="number" step="any" value="${F0.meta}" oninput="F0.meta=this.value"></div></div></div>
- <div class="card"><h3>¿De dónde viene el problema? <small>origen y dato de respaldo</small></h3>
+  <div class="f2"><label class="lab">Fecha de apertura del RDP</label><input type="date" value="${F0.inicio}" onchange="F0.inicio=this.value"></div>
+  <div class="f2"><label class="lab">Tipo de pérdida (muda)</label><select onchange="F0.muda=this.value">${MUDAS.map(m=>`<option ${m===F0.muda?'selected':''}>${m}</option>`).join('')}</select></div></div>`)}
+ ${sec(2,'Origen del problema y estándar',s2,`
   <div class="form"><div class="f2"><label class="lab">Origen</label>${so('orig',ORIG.map(x=>[x,x]))}</div>
   ${(orig[P0.orig]||[]).map(l=>`<div class="f2"><label class="lab">${l}</label><input type="text" value="${esc2(F0.det[l]||'')}" oninput="F0.det['${l}']=this.value"></div>`).join('')}
   </div>
   <div style="margin-top:12px" class="form"><div class="f2"><label class="lab">¿Existe un estándar?</label>${yn('exs')}</div><div class="f2"><label class="lab">¿Se sigue?</label>${yn('cum')}</div><div class="f2"><label class="lab">¿Proceso estable?</label>${yn('est')}</div></div>
-  <div class="note ${kz[0]}">${kz[1]}</div></div>
- <div class="card"><h3>Pérdida anual estimada <small>el valor «antes» que se compara al cierre</small><button class="btn alt" style="margin-left:auto" onclick="openPL('p0')">+ Pérdida</button></h3>
+  <div class="note ${kz[0]}">${kz[1]}</div>`)}
+ ${sec(3,'Impacto',s3,`  <div class="form" style="margin-top:10px"><div class="f2"><label class="lab">Indicador (unidad)</label><input type="text" placeholder="% scrap, min parada/turno…" value="${esc2(F0.unidad)}" oninput="F0.unidad=this.value"></div>
+  <div class="f2"><label class="lab">Situación inicial</label><input type="number" step="any" value="${F0.base}" oninput="F0.base=this.value"></div>
+  <div class="f2"><label class="lab">Situación objetivo</label><input type="number" step="any" value="${F0.meta}" oninput="F0.meta=this.value"></div></div>
+  <div class="sub"><h3>Pérdida anual estimada <small>el valor «antes» que se compara al cierre</small><button class="btn alt" style="margin-left:auto" onclick="openPL('p0')">+ Pérdida</button></h3>
   <div class="tw"><table><thead><tr><th>Tipo</th><th>Concepto</th><th>Un.</th><th class="r">Pérdida unitaria</th><th class="r">Cantidad anual</th><th class="r">Pérdida total</th><th></th></tr></thead><tbody>${P0.lines.map((l,ix)=>`<tr><td>${tag(l.mode==='std'?'Estándar':'Libre',l.mode==='std'?'#2E9BD6':'#F28C28')}</td><td>${l.concepto}${calcHTML(l)}</td><td>${l.unidad}</td><td class="r">${fmtUS(l.costo)}</td><td class="r">${fv(l.antes)}</td><td class="r"><b>${fmtUS(l.antes*l.costo)}</b></td><td class="nw r">${plBtns('p0',ix)}</td></tr>`).join('')||'<tr><td colspan="7" class="mut">Todavía no cargaste pérdidas.</td></tr>'}</tbody><tfoot><tr class="tfoot"><td colspan="5" class="r">Pérdida anual total</td><td class="r">${fmtUS(_s(P0.lines,l=>l.antes*l.costo))}</td><td></td></tr></tfoot></table></div>
   <div class="note">Usá <b>valores estándar</b> de la matriz de costos o un <b>concepto libre</b> (p. ej. costos indirectos que la matriz no contempla). Los libres quedan marcados como tales en el cálculo.</div></div>
- <div class="card"><h3>Priorización <small>criterios del taller de RDP · decide el equipo por consenso</small></h3>
-  <div class="form">${crit.map((c,i)=>`<div class="f2"><label class="lab">${c}</label><select onchange="P0.s[${i}]=+this.value;renderP0()">${[1,2,3,4,5].map(v=>`<option ${P0.s[i]===v?'selected':''}>${v}</option>`).join('')}</select></div>`).join('')}
-  <div class="f2"><label class="lab">Puntaje total</label><div class="tot">${tot} <span class="mut" style="font-size:14px">/ 20</span></div><div class="pb" style="height:10px"><div style="width:${tot/20*100}%;background:${tot>=15?'#E5484D':tot>=10?'#F2A93B':'#2E9BD6'}"></div></div></div></div></div>
- <div class="card"><h3>Elegí el modelo de resolución de problemas <small>la recomendación es una guía: la decisión es tuya</small></h3>
+  <div class="sub"><h3>Impacto del problema <small>criterios del taller de RDP · decide el equipo por consenso</small></h3>
+  <div class="form">${crit.map((c,i)=>`<div class="f2"><label class="lab">${c}</label><select onchange="P0.s[${i}]=+this.value;renderP0()">${LVL.map(([v,l])=>`<option value="${v}" ${lvOf(P0.s[i])===v?'selected':''}>${l}</option>`).join('')}</select></div>`).join('')}
+  <div class="f2"><label class="lab">Impacto global</label><div class="tot" style="color:${gl[2]}">${gl[0]} <span class="mut" style="font-size:14px">${tot} / 20 pts</span></div><div class="pb" style="height:10px"><div style="width:${tot/20*100}%;background:${gl[2]}"></div></div></div></div>
+  <div class="note">Ponderación: Alto = 5, Medio = 3, Bajo = 1 punto por criterio. El total (4 a 20) define el impacto global: Alto desde 14, Medio de 8 a 13, Bajo hasta 7.</div></div>`)}
+ ${sec(4,'Modelo de resolución de problemas',esc2(HN[sel]),`<div class="mut" style="margin-bottom:8px">La recomendación es una guía: la decisión es tuya.</div>
   <div class="form" style="margin-bottom:12px"><div class="f2"><label class="lab">Causa raíz</label>${so('causa',[[0,'Conocida / probable'],[1,'A investigar'],[2,'Multicausal / desconocida']])}</div>
   <div class="f2"><label class="lab">Alcance</label>${so('alc',[[0,'Un sector'],[1,'Un área'],[2,'Varias áreas, gerencias o plantas']])}</div>
   <div class="f2"><label class="lab">¿Requiere inversión?</label>${so('inv',[[0,'No'],[1,'Sí']])}</div>
@@ -1017,7 +1035,7 @@ function renderP0(){
   <div class="tools">${TOOLS.map(t=>`<div class="tool ${sel===t.k?'sel':''}" onclick="P0.tool='${t.k}';renderP0()">${rec.k===t.k?'<span class="rec">★ Recomendado</span>':''}<h4>${t.n}</h4><div>${tag(t.f,HC[t.k])} <span class="mut">${t.t} (referencia)</span></div><p>${t.d}</p><p class="mut"><i>${t.e}</i></p></div>`).join('')}</div>
   <div class="note">Complejidad ${rec.s}/6 → se recomienda <b>${HN[rec.k]}</b>. Elegiste <b>${HN[sel]}</b>.</div>
   ${sel!==rec.k?`<div class="f2" style="margin-top:10px"><label class="lab">Elegiste distinto de lo recomendado: ¿por qué?</label><textarea rows="2" placeholder="Justificación (queda registrada en el RDP)" oninput="P0.just=this.value">${P0.just}</textarea></div>`:''}
-  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" onclick="createRdp()">Crear RDP</button><button class="btn ghost" onclick="toast('En la muestra no se guardan datos')">Guardar borrador</button></div></div>`;
+  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" onclick="createRdp()">Crear RDP</button><button class="btn ghost" onclick="toast('En la muestra no se guardan datos')">Guardar borrador</button></div>`,true)}`;
 }
 function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',2200)}
 
