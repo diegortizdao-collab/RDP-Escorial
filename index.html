@@ -469,7 +469,7 @@ async function api(method,path,body){
  else if(typeof CFG.getToken==='function'){h['Authorization']='Bearer '+await CFG.getToken()}
  const r=await fetch(CFG.API_URL.replace(/\/$/,'')+path,{method,headers:h,body:body===undefined?undefined:JSON.stringify(body)});
  let j=null;try{j=await r.json()}catch(e){}
- if(!r.ok){const er=new Error((j&&j.error)||('Error '+r.status));er.status=r.status;throw er}
+ if(!r.ok){const er=new Error(((j&&j.error)||('Error '+r.status))+(j&&j.detail?' ('+j.detail+')':''));er.status=r.status;throw er}
  return j;
 }
 function AVH(e,cls,click){const u=USERS.find(x=>x.e===e);if(!u)return'';
