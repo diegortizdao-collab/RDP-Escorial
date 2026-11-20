@@ -271,9 +271,9 @@ function renderDash(){
   <div class="card"><h3>Tipo de pérdida (muda) <small>cantidad de RDP</small></h3><div class="ch"><canvas id="c9"></canvas></div></div>
  </div>
  <div class="card"><h3>Listado de RDP ${UI.paso!==null?`<span class="chip" onclick="UI.paso=null;renderDash()">Paso ${UI.paso} · ${PASOS[UI.paso]} ✕</span>`:''}<small>${L.length} resultados · click en una fila para abrir la ficha</small></h3>
-  <div class="tw"><table><thead><tr><th>ID</th><th>Problema</th><th>Planta · Área · Sector</th><th>Herramienta</th><th>Avance (pasos 0–8)</th><th>Fase</th><th class="r">Ahorro proy.</th><th class="r">Ahorro real</th><th>Acciones</th><th>Líder</th></tr></thead><tbody>
+  <div class="tw"><table><thead><tr><th>ID</th><th>Problema</th><th>Planta · Área · Sector</th><th>Herramienta</th><th>Avance (pasos 0–8)</th><th>Fase</th><th class="r">Ahorro proy.</th><th class="r">Ahorro real</th><th>Acciones</th><th>Líder</th>${UI.rol==='Administrador'?'<th></th>':''}</tr></thead><tbody>
   ${L.map(r=>{const v=r.acc.filter(a=>a.est==='Vencida').length,c=r.acc.filter(a=>a.est==='Cerrada').length;const f=FASE(r.paso);
-   return `<tr class="rw" onclick="openRdp('${r.id}')"><td class="nw"><b>${r.id}</b></td><td>${r.titulo}</td><td class="mut">${locTxt(r.loc)}</td><td>${tag(HN[r.herr],HC[r.herr])}</td><td>${stepsHTML(r.paso)} <span class="mut">${r.paso}/8</span></td><td>${r.cerrado?tag('Cerrado','#667085'):tag(f+' · '+FN[f],FC[f])}</td><td class="r nw">${fmtK(r.ahorroProy)}</td><td class="r nw">${r.medido?'<b style="color:#1C8E5F">'+fmtK(r.ahorroReal)+'</b>':'<span class="mut">aún sin medir</span>'}</td><td class="nw">${c}/${r.acc.length}${v?` <span style="color:var(--bad);font-weight:700">· ${v} venc.</span>`:''}</td><td class="mut">${r.lider}</td></tr>`}).join('')||'<tr><td colspan="10" class="mut">Sin resultados para el filtro elegido.</td></tr>'}
+   return `<tr class="rw" onclick="openRdp('${r.id}')"><td class="nw"><b>${r.id}</b></td><td>${r.titulo}</td><td class="mut">${locTxt(r.loc)}</td><td>${tag(HN[r.herr],HC[r.herr])}</td><td>${stepsHTML(r.paso)} <span class="mut">${r.paso}/8</span></td><td>${r.cerrado?tag('Cerrado','#667085'):tag(f+' · '+FN[f],FC[f])}</td><td class="r nw">${fmtK(r.ahorroProy)}</td><td class="r nw">${r.medido?'<b style="color:#1C8E5F">'+fmtK(r.ahorroReal)+'</b>':'<span class="mut">aún sin medir</span>'}</td><td class="nw">${c}/${r.acc.length}${v?` <span style="color:var(--bad);font-weight:700">· ${v} venc.</span>`:''}</td><td class="mut">${r.lider}</td>${UI.rol==='Administrador'?`<td class="nw"><button class="btn ghost" style="padding:3px 8px;color:#E5484D" title="Eliminar RDP (solo administrador)" onclick="rdpAskDel('${r.id}',event)">🗑</button></td>`:''}</tr>`}).join('')||'<tr><td colspan="11" class="mut">Sin resultados para el filtro elegido.</td></tr>'}
   </tbody></table></div></div>`;
  drawCharts(LS,acts);
 }
@@ -313,6 +313,7 @@ function renderFicha(){
  <div class="card"><div class="filters"><div class="f" style="max-width:340px;flex:1 1 300px"><label>RDP</label><select onchange="UI.sel=this.value;UI.fp=null;renderFicha()">${RDPS.map(x=>`<option value="${x.id}" ${x.id===r.id?'selected':''}>${x.id} · ${x.titulo}</option>`).join('')}</select></div></div></div>
  <div class="card"><h3>${r.id} · ${r.titulo} ${tag(HN[r.herr],HC[r.herr])} ${r.cerrado?tag('Cerrado','#667085'):tag(f+' · '+FN[f],FC[f])} ${tag('Muda: '+r.muda,MC[MUDAS.indexOf(r.muda)])}</h3>
   <div class="mut" style="margin-bottom:8px">${locTxt(r.loc)} &nbsp;|&nbsp; ${r.loc.ger||''} &nbsp;|&nbsp; Líder: ${AVH(r.liderEmail,'sm')}${r.lider} &nbsp;|&nbsp; Inicio: ${fd(r.inicio)} &nbsp;|&nbsp; Origen: ${r.origen} (${r.ind.u})</div>
+  ${eqLine(r)}
   <div class="bandrow"><div style="background:${FC.P};grid-column:1/7">P · Planificar</div><div style="background:${FC.D}">D</div><div style="background:${FC.C}">C</div><div style="background:${FC.A}">A</div></div>
   <div class="big">${PASOS.map((n,p)=>`<div class="bs ${p<r.paso?'done':p===r.paso?'cur':''}" style="${p<=r.paso?'background:'+FC[FASE(p)]:''}"><b>${p<r.paso?'✓':p}</b>${n}</div>`).join('')}</div>${pasoNav(r)}</div>
  ${formCard(r)}
@@ -492,7 +493,7 @@ function mapRdp(a){
  const r={id:a.id,titulo:a.titulo,loc:{ger:a.gerencia,area:a.area,sector:a.sector,planta:a.planta},herr:a.herramienta,paso:a.paso,inicio:D(a.inicio),
   ind:{u:a.indicador_unidad||'',b:+a.linea_base,m:+a.meta},base:+a.linea_base,meta:+a.meta,actual:+a.actual,P0:+a.perdida_base,costo:+a.inversion,
   ahorroProy:+a.ahorro_proy,ahorroReal:+a.ahorro_real,medido:a.paso>=7,impacto:a.ultima_medicion?D(a.ultima_medicion):(a.paso>=7?TODAY:null),
-  cerrado:a.cerrado,lider:uname(a.lider_email),liderEmail:a.lider_email,creadoPor:a.creado_por,origen:a.origen,muda:a.muda,crs:[],justificacion:a.justificacion,
+  cerrado:a.cerrado,lider:uname(a.lider_email),liderEmail:a.lider_email,equipo:Array.isArray(a.equipo)?a.equipo:[],creadoPor:a.creado_por,origen:a.origen,muda:a.muda,crs:[],justificacion:a.justificacion,
   lines:(a.perdidas||[]).map(p=>({id:p.id,mode:p.modo,cid:p.matriz_id,concepto:p.concepto,unidad:p.unidad,costo:+p.costo_unit,antes:+p.cant_antes,desp:p.cant_despues==null?null:+p.cant_despues,fuente:p.fuente,calc:p.calculo||{}})),
   acc:(a.acciones||[]).map(x=>({id:x.codigo,_id:x.id,tipo:x.tipo,txt:x.texto,cr:x.causa_raiz||'—',resp:uname(x.resp_email),respE:x.resp_email,ini:D(x.inicio),comp:D(x.compromiso),av:x.avance,est:x.estado,costo:+x.inversion})),
   pasos:old?old.pasos:{},meds:old?old.meds:[],_det:old?old._det:false};
@@ -570,6 +571,47 @@ const FORMS={
   7:{t:'04 · Validar resultados',f:[['val','Resultado','sel',VALID],['concl','Comentario','area']],link:'med'},
   8:{t:'Estandarizar y compartir',f:[['est','Estándar actualizado','text'],['yok','Se comparte con','area']],link:'acc:Estandarización'}}}};
 const pasoFill=(r,n)=>{const S0=FORMS[r.herr].p[n]||{f:[]},F=S0.f,d=(r.pasos||{})[n]||{};if(S0.custom==='desglose'){const ok=desgInfo(r).path.length?1:0;return F.length?(ok+F.filter(x=>String(d[x[0]]||'').trim()).length/F.length)/2:ok}return F.length?F.filter(x=>String(d[x[0]]||'').trim()).length/F.length:0};
+/* ───────── Equipo del RDP y eliminación de RDP de prueba ───────── */
+const eqOf=r=>r.equipo||[];
+const eqAv=m=>{const u=m.e&&USERS.find(x=>x.e===m.e);if(u)return AVH(m.e,'sm');const ini=String(m.n||'?').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();return `<span class="av sm" title="${esc2(m.n)}">${esc2(ini)}</span>`};
+const eqChips=(list,rm)=>(list||[]).map((m,i)=>`<span class="chip" style="cursor:default;display:inline-flex;align-items:center;gap:5px;margin:2px 4px 2px 0">${eqAv(m)}<span>${esc2(m.n)}${m.r?` <small class="mut">· ${esc2(m.r)}</small>`:''}</span>${rm?`<b style="cursor:pointer;color:#E5484D" title="Quitar" onclick="eqRem(${i})">✕</b>`:''}</span>`).join('');
+let EQ={t:'',list:[],e:'',n:'',r:''};
+function openEquipo(t){
+ const r=t==='rdp'?cur():null;EQ={t,list:(t==='rdp'?eqOf(r):(F0.equipo||[])).map(m=>({...m})),e:'',n:'',r:''};eqRender()}
+function eqRender(){
+ const lid=EQ.t==='rdp'?cur().liderEmail:F0.lider;
+ const libres=USERS.filter(u=>u.e!==lid&&!EQ.list.some(m=>m.e===u.e));
+ openModal(`<h3 style="font-size:20px;margin:0 0 2px">Equipo del RDP</h3><div class="mut" style="margin-bottom:10px">El líder se muestra aparte. Sumá a quienes integran el equipo: personas del directorio o gente sin usuario (por ejemplo, operarios).</div>
+ <div style="min-height:34px;margin-bottom:10px">${EQ.list.length?eqChips(EQ.list,true):'<span class="mut">Todavía no hay miembros.</span>'}</div>
+ <div class="lab">Agregar del directorio</div>
+ <div class="rowh" style="gap:6px"><select id="eqe" style="flex:1"><option value="">— Elegir persona —</option>${libres.map(u=>`<option value="${u.e}">${esc2(u.n+' '+u.a)} · ${esc2(u.ar||'')}</option>`).join('')}</select><input type="text" id="eqr1" placeholder="Función (opcional)" style="flex:1"><button class="btn alt" onclick="eqAddU()">+ Agregar</button></div>
+ <div class="lab" style="margin-top:10px">O agregar a alguien sin usuario</div>
+ <div class="rowh" style="gap:6px"><input type="text" id="eqn" placeholder="Nombre y apellido" style="flex:1"><input type="text" id="eqr2" placeholder="Función (opcional)" style="flex:1"><button class="btn ghost" onclick="eqAddN()">+ Agregar</button></div>
+ <div style="text-align:right;margin-top:14px"><button class="btn ghost" onclick="closeModal()">Cancelar</button> <button class="btn alt" onclick="eqSave()">Guardar equipo</button></div>`)}
+function eqAddU(){const e=$('#eqe').value;if(!e)return toast('Elegí una persona');const u=USERS.find(x=>x.e===e);if(EQ.list.length>=15)return toast('Máximo 15 miembros');EQ.list.push({e,n:u.n+' '+u.a,r:$('#eqr1').value.trim()});eqRender()}
+function eqAddN(){const n=$('#eqn').value.trim();if(!n)return toast('Escribí el nombre');if(EQ.list.length>=15)return toast('Máximo 15 miembros');if(EQ.list.some(m=>m.n.toLowerCase()===n.toLowerCase()))return toast('Ya está en el equipo');EQ.list.push({e:'',n,r:$('#eqr2').value.trim()});eqRender()}
+function eqRem(i){EQ.list.splice(i,1);eqRender()}
+async function eqSave(){
+ try{
+  if(EQ.t==='new'){F0.equipo=EQ.list.map(m=>({...m}));closeModal();renderP0();return}
+  const r=cur();
+  if(LIVE)putRdp(await api('PATCH','/rdp/'+r.id,{equipo:EQ.list}));else r.equipo=EQ.list.map(m=>({...m}));
+  closeModal();toast('Equipo actualizado');render();
+ }catch(e){toast(e.message)}
+}
+const eqLine=r=>`<div style="margin-bottom:8px"><b>Equipo:</b> ${eqOf(r).length?eqChips(eqOf(r)):'<span class="mut">sin miembros cargados</span>'}${canEditR(r)?` <button class="btn ghost" style="padding:2px 9px" onclick="openEquipo('rdp')">✎ Editar equipo</button>`:''}</div>`;
+let RD={};
+function rdpAskDel(id,ev){if(ev)ev.stopPropagation();const r=RDPS.find(x=>x.id===id);if(!r)return;RD={id};
+ openModal(`<h3 style="font-size:20px;margin:0 0 6px">Eliminar RDP</h3><div style="margin-bottom:10px">¿Eliminar <b>${r.id}</b> — ${esc2(r.titulo)}?<br>Se borran también sus pasos, pérdidas, acciones y mediciones. <b>No se puede deshacer.</b> Usalo solo para RDP cargados de prueba.</div><div style="text-align:right"><button class="btn ghost" onclick="closeModal()">Cancelar</button> <button class="btn" style="background:#E5484D" onclick="rdpDel()">Eliminar definitivamente</button></div>`)}
+async function rdpDel(){
+ const id=RD.id;try{
+  if(LIVE)await api('DELETE','/rdp/'+id);
+  const i=RDPS.findIndex(x=>x.id===id);if(i>=0)RDPS.splice(i,1);
+  if(UI.sel===id)UI.sel=RDPS[0]?RDPS[0].id:null;
+  closeModal();toast('RDP '+id+' eliminado');render();
+ }catch(e){toast(e.message)}
+}
+
 /* ───────── Edición de acciones: avance de contramedidas y datos ───────── */
 const canEditR=r=>!LIVE||UI.rol==='Administrador'||!!(UI.me&&(r.liderEmail===UI.me.email||r.creadoPor===UI.me.email));
 const crsOf=r=>{if(!LIVE)return r.crs||[];const d=((r.pasos||{})[4])||{};return [d.araiz,d.braiz].map(x=>String(x||'').trim()).filter(Boolean)};
@@ -757,6 +799,7 @@ function docHTML(r){
  <table class="top"><tr><td style="width:18%">${logo?`<img src="${logo}" style="height:34px">`:'ESCORIAL'}</td><td class="t">${r.herr==='5PQ'?'PDCA · 5 Porqués':r.herr==='A3'?'A3 · Resolución de problemas':'A4 · Resolución de problemas'}</td><td class="c" style="width:22%"><b>${FM.cod}</b><br>${r.id} · Emitido ${hoy}</td></tr></table>
  <table class="inf"><tr><td class="k">Problema</td><td colspan="5"><b>${HX(r.titulo)}</b></td><td class="k">Estado</td><td>${r.cerrado?'Cerrado':'Paso '+r.paso+' · '+FN[FASE(r.paso)]}</td></tr>
  <tr><td class="k">Gerencia</td><td>${HX(r.loc.ger)}</td><td class="k">Área</td><td>${HX(r.loc.area)}</td><td class="k">Sector · Planta</td><td>${HX((r.loc.sector||'—')+' · '+r.loc.planta)}</td><td class="k">Líder</td><td>${HX(r.lider)}</td></tr>
+ <tr><td class="k">Equipo</td><td colspan="7">${eqOf(r).length?eqOf(r).map(m=>HX(m.n)+(m.r?' ('+HX(m.r)+')':'')).join(' · '):'—'}</td></tr>
  <tr><td class="k">Inicio</td><td>${fd(r.inicio)}</td><td class="k">Origen</td><td>${HX(r.origen)}</td><td class="k">Muda</td><td>${HX(r.muda)}</td><td class="k">Indicador</td><td>${fv(r.base)} → ${fv(r.meta)} ${HX(r.ind.u)}</td></tr>
  <tr><td class="k">Impacto</td><td colspan="7">${ahorro}</td></tr></table>
  <table class="main"><tr>${cols}</tr></table>
@@ -901,13 +944,13 @@ async function valSave(id){
 }
 
 /* ============ CREAR RDP (Paso 0) ============ */
-const F0={titulo:'',ger:'',area:'',sector:'',planta:'',lider:'',unidad:'',base:'',meta:'',muda:'Defectos',det:{}};
+const F0={equipo:[],titulo:'',ger:'',area:'',sector:'',planta:'',lider:'',unidad:'',base:'',meta:'',muda:'Defectos',det:{}};
 async function createRdp(){
  const rec=recTool(),herr=P0.tool||rec.k;
  if(!F0.titulo.trim()||!F0.area)return toast('Completá el título y la ubicación (gerencia, área y planta)');
  const lider=F0.lider||(USERS[0]&&USERS[0].e);
  const body={titulo:F0.titulo.trim(),gerencia:F0.ger,area:F0.area,sector:F0.sector,planta:F0.planta,herramienta:herr,origen:P0.orig,origen_detalle:F0.det,muda:F0.muda,
-  prioridad:{seguridad:P0.s[0],severidad:P0.s[1],cantidad:P0.s[2],recurrencia:P0.s[3],complejidad:rec.s,recomendada:rec.k,estandar:P0.exs,cumple:P0.cum,estable:P0.est},justificacion:P0.just,lider_email:lider,
+  prioridad:{seguridad:P0.s[0],severidad:P0.s[1],cantidad:P0.s[2],recurrencia:P0.s[3],complejidad:rec.s,recomendada:rec.k,estandar:P0.exs,cumple:P0.cum,estable:P0.est},justificacion:P0.just,lider_email:lider,equipo:F0.equipo||[],
   indicador_unidad:F0.unidad,linea_base:+F0.base||0,meta:+F0.meta||0,
   perdidas:P0.lines.map(l=>({modo:l.mode,matriz_id:l.cid,concepto:l.concepto,unidad:l.unidad,costo_unit:l.costo,cant_antes:l.antes,fuente:l.fuente,calculo:l.calc||{}}))};
  try{
@@ -915,10 +958,10 @@ async function createRdp(){
   if(LIVE){const a=await api('POST','/rdp',body);putRdp(a);id=a.id}
   else{id='RDP-'+String(RDPS.length+1).padStart(3,'0');
    const r={id,titulo:body.titulo,loc:{ger:F0.ger,area:F0.area,sector:F0.sector,planta:F0.planta},herr,paso:1,inicio:TODAY,ind:{u:F0.unidad,b:+F0.base,m:+F0.meta},base:+F0.base||0,meta:+F0.meta||0,actual:+F0.base||0,P0:0,costo:0,
-    lines:P0.lines.map(l=>({...l})),muda:F0.muda,medido:false,impacto:null,cerrado:false,titulo2:'',lider:uname(lider),origen:P0.orig,crs:[],acc:[],pasos:{},meds:[],ahorroProy:0,ahorroReal:0};
+    lines:P0.lines.map(l=>({...l})),muda:F0.muda,medido:false,impacto:null,cerrado:false,titulo2:'',lider:uname(lider),liderEmail:lider,equipo:(F0.equipo||[]).map(m=>({...m})),origen:P0.orig,crs:[],acc:[],pasos:{},meds:[],ahorroProy:0,ahorroReal:0};
    recalc(r);RDPS.push(r)}
   UI.sel=id;UI.fp=1;UI.tab='ficha';
-  P0.lines=[];P0.just='';P0.tool='';Object.assign(F0,{titulo:'',base:'',meta:'',unidad:'',det:{}});
+  P0.lines=[];P0.just='';P0.tool='';Object.assign(F0,{equipo:[],titulo:'',base:'',meta:'',unidad:'',det:{}});
   render();toast('RDP '+id+' creado en el paso 1 · '+HN[herr]);
  }catch(e){toast(e.message)}
 }
@@ -949,6 +992,7 @@ function renderP0(){
   <div class="f2"><label class="lab">Sector <small class="mut">(opcional)</small></label><select onchange="F0.sector=this.value"><option value="">— sin sector —</option>${secs.map(x=>`<option ${x===F0.sector?'selected':''}>${x}</option>`).join('')}</select></div>
   <div class="f2"><label class="lab">Planta</label><select onchange="F0.planta=this.value">${PLANTAS.map(x=>`<option ${x===F0.planta?'selected':''}>${x}</option>`).join('')}</select></div>
   <div class="f2"><label class="lab">Líder del RDP</label><select onchange="F0.lider=this.value">${USERS.map(u=>`<option value="${u.e}" ${u.e===F0.lider?'selected':''}>${u.n} ${u.a}</option>`).join('')}</select></div>
+  <div class="f2" style="grid-column:1/-1"><label class="lab">Equipo (opcional, se verá en el encabezado del problema)</label><div>${(F0.equipo||[]).length?eqChips(F0.equipo):'<span class="mut">Sin miembros.</span>'} <button class="btn ghost" style="padding:2px 9px" onclick="openEquipo('new')">+ Equipo</button></div></div>
   <div class="f2"><label class="lab">Tipo de pérdida (muda)</label><select onchange="F0.muda=this.value">${MUDAS.map(m=>`<option ${m===F0.muda?'selected':''}>${m}</option>`).join('')}</select></div></div>
   <div class="form" style="margin-top:10px"><div class="f2"><label class="lab">Indicador (unidad)</label><input type="text" placeholder="% scrap, min parada/turno…" value="${esc2(F0.unidad)}" oninput="F0.unidad=this.value"></div>
   <div class="f2"><label class="lab">Línea base</label><input type="number" step="any" value="${F0.base}" oninput="F0.base=this.value"></div>
