@@ -725,6 +725,47 @@ function desgCard(r){
  ${funnel}
  ${inf.pp?`<div class="note ok" style="margin-top:12px"><b>Problema priorizado:</b> ${esc2(inf.pp)}</div>`:'<div class="note w" style="margin-top:12px">Cargá cantidades en el primer nivel para ver el punto prioritario.</div>'}`;
 }
+/* ───────── Flujograma: punto de ocurrencia y punto de detección ───────── */
+const fls=()=>{const d=dsg();if(!d.flujo)d.flujo=[];return d.flujo};
+const flUpd=()=>{const e=$('#flowsvg');if(e)e.innerHTML=flowSVG(cur())};
+function flAdd(){const F=fls();if(F.length>=2)return;F.push({titulo:F.length?'Flujo de detalle':'Flujo del proceso',pasos:[{t:'',m:''},{t:'',m:''},{t:'',m:''}]});renderFicha()}
+function flDel(i){fls().splice(i,1);renderFicha()}
+function flTitle(i,v){fls()[i].titulo=v;flUpd()}
+function flStepAdd(i){const P=fls()[i].pasos;if(P.length>=20)return toast('Máximo 20 pasos por flujo');P.push({t:'',m:''});renderFicha()}
+function flStepText(i,j,v){fls()[i].pasos[j].t=v;flUpd()}
+function flStepMark(i,j,v){const P=fls()[i].pasos;if(v)P.forEach(s=>{if(s.m===v)s.m=''});P[j].m=v;renderFicha()}
+function flStepDel(i,j){fls()[i].pasos.splice(j,1);renderFicha()}
+function flMove(i,j,d){const P=fls()[i].pasos,k=j+d;if(k<0||k>=P.length)return;[P[j],P[k]]=[P[k],P[j]];renderFicha()}
+function flBulk(i){const t=($('#flb'+i)||{}).value||'',L=t.split(/\n+/).map(x=>x.trim()).filter(Boolean);if(!L.length)return toast('Pegá al menos un paso');const P=fls()[i].pasos.filter(s=>String(s.t||'').trim());L.forEach(x=>{if(P.length<20)P.push({t:x,m:''})});fls()[i].pasos=P;renderFicha()}
+function flowInfo(r){const F=((((r.pasos||{})[2])||{}).flujo)||[];let occ='',det='';F.forEach(f=>(f.pasos||[]).forEach(s=>{if(s.m==='occ'&&String(s.t).trim())occ=String(s.t).trim();if(s.m==='det'&&String(s.t).trim())det=String(s.t).trim()}));return {occ,det}}
+function flowSVG(r){
+ const d=((r.pasos||{})[2])||{},F=(d.flujo||[]).filter(f=>(f.pasos||[]).some(s=>String(s.t||'').trim()));if(!F.length)return'';
+ const W=1000,P=104,CW=116,CH=66,PER=Math.floor((W-40-14)/P),E=esc2;let y=10,g='';
+ F.forEach((f,fi)=>{
+  const ps=(f.pasos||[]).filter(s=>String(s.t||'').trim()),tt=String(f.titulo||'Flujo '+(fi+1)).toUpperCase(),bw=Math.min(560,40+tt.length*10);
+  g+=`<rect x="20" y="${y}" width="${bw}" height="38" rx="8" fill="#4285F4" stroke="#0B2A4A" stroke-width="2"/><text x="${20+bw/2}" y="${y+25}" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">${E(tt)}</text>`;y+=52;
+  for(let rs=0;rs<ps.length;rs+=PER){const row=ps.slice(rs,rs+PER);if(row.some(s=>s.m))y+=56;
+   row.forEach((s,k)=>{const x=24+k*P,m=s.m,fill=m==='occ'?'#D9D9D9':m==='det'?'#CFE3FF':'#FDD9A0',st=m==='occ'?'#404040':m==='det'?'#2E75F0':'#F5B461',cx=x+CW/2;
+    g+=`<polygon points="${x},${y} ${x+CW-16},${y} ${x+CW},${y+CH/2} ${x+CW-16},${y+CH} ${x},${y+CH} ${x+16},${y+CH/2}" fill="${fill}" stroke="${st}" stroke-width="${m?2.4:1.2}"/>`;
+    const L=wrapT(s.t,15,5);L.forEach((l,q)=>{g+=`<text x="${cx+3}" y="${y+CH/2-(L.length-1)*5.5+q*11+3.5}" text-anchor="middle" font-size="10" ${m?'font-weight="700"':''} fill="#1D2939">${E(l)}</text>`});
+    if(m){const occ=m==='occ',l1='PUNTO DE',l2=occ?'OCURRENCIA':'DETECCIÓN';
+     g+=`<rect x="${cx-50}" y="${y-52}" width="100" height="36" rx="8" fill="${occ?'#E7E7E7':'#CFE3FF'}" stroke="${occ?'#404040':'#2E75F0'}" stroke-width="1.6"/><text x="${cx}" y="${y-36}" text-anchor="middle" font-size="10" font-weight="700" fill="#1D2939">${l1}</text><text x="${cx}" y="${y-23}" text-anchor="middle" font-size="10" font-weight="700" fill="#1D2939">${l2}</text><polygon points="${cx-6},${y-14} ${cx+6},${y-14} ${cx},${y-3}" fill="#fff" stroke="${occ?'#404040':'#2E75F0'}" stroke-width="1.6"/>`}
+   });y+=CH+14}
+  if(fi<F.length-1){const a=60,b=W-60,c=W/2;g+=`<path d="M ${a} ${y} Q ${a} ${y+24} ${a+40} ${y+24} L ${c-30} ${y+24} Q ${c} ${y+24} ${c} ${y+46}" fill="none" stroke="#7F95A5" stroke-width="3"/><path d="M ${b} ${y} Q ${b} ${y+24} ${b-40} ${y+24} L ${c+30} ${y+24} Q ${c} ${y+24} ${c} ${y+46}" fill="none" stroke="#7F95A5" stroke-width="3"/>`;y+=64}
+ });
+ return `<svg viewBox="0 0 ${W} ${y+6}" style="width:100%;height:auto;background:#fff;border:1px solid #D8E1EB;border-radius:10px">${g}</svg>`}
+function flowDoc(r){const s=flowSVG(r);return s?`<div class="sb">Flujograma · punto de ocurrencia y punto de detección</div><div style="padding:4px">${s}</div>`:''}
+function flEd(f,i){
+ return `<div style="border:1px solid #D8E1EB;border-radius:12px;padding:12px;margin-top:10px;background:${i%2?'#F8FBFE':'#fff'}">
+ <div class="rowh" style="gap:8px"><b style="color:var(--navy)">Flujo ${i+1}</b><input type="text" style="flex:1;max-width:420px" placeholder="Título (Ej.: Flujo de proceso línea 1)" value="${esc2(f.titulo||'')}" oninput="flTitle(${i},this.value)"><button class="btn ghost sp" style="color:#E5484D" onclick="flDel(${i})">Quitar flujo</button></div>
+ ${(f.pasos||[]).map((s,j)=>`<div class="rowh" style="gap:6px;margin:4px 0"><span class="mut" style="width:22px;text-align:right">${j+1}</span><input type="text" style="flex:1" placeholder="Paso del proceso" value="${esc2(s.t)}" oninput="flStepText(${i},${j},this.value)"><select style="width:170px" onchange="flStepMark(${i},${j},this.value)"><option value="">Paso normal</option><option value="occ" ${s.m==='occ'?'selected':''}>● Punto de ocurrencia</option><option value="det" ${s.m==='det'?'selected':''}>● Punto de detección</option></select><button class="btn ghost" style="padding:2px 8px" title="Mover antes" onclick="flMove(${i},${j},-1)">◀</button><button class="btn ghost" style="padding:2px 8px" title="Mover después" onclick="flMove(${i},${j},1)">▶</button><button class="btn ghost" style="padding:2px 8px;color:#E5484D" title="Quitar" onclick="flStepDel(${i},${j})">✕</button></div>`).join('')}
+ <div class="rowh" style="margin-top:6px"><button class="btn ghost" onclick="flStepAdd(${i})">+ Paso</button><span class="mut">o pegá varios, uno por línea:</span></div>
+ <div class="rowh" style="gap:6px;margin-top:4px;align-items:flex-start"><textarea id="flb${i}" rows="3" style="flex:1" placeholder="Corte de chapa&#10;Cilindrado&#10;Rebordeado…"></textarea><button class="btn ghost" onclick="flBulk(${i})">Cargar pasos</button></div></div>`}
+function flowCard(r){const F=(dsg().flujo)||[];
+ return `<div class="sub"><h3>Flujograma del proceso <small>ubicá el punto de ocurrencia y el de detección</small><button class="btn alt" style="margin-left:auto" onclick="flAdd()" ${F.length>=2?'disabled':''}>+ ${F.length?'Flujo de detalle':'Flujo'}</button></h3>
+ ${F.length?'':'<div class="note">Armá el flujo del proceso paso a paso (por ejemplo, las etapas de la línea) y marcá dónde <b>ocurre</b> el problema y dónde se <b>detecta</b>. Podés sumar un segundo flujo con el detalle de la etapa donde ocurre.</div>'}
+ ${F.map(flEd).join('')}
+ <div id="flowsvg" style="margin-top:10px">${flowSVG(r)}</div></div>`}
 function desgDoc(r){
  const inf=desgInfo(r);if(!inf.lv.length||!inf.total)return'';
  return inf.lv.map(L=>`<div class="sb">Nivel ${L.i+1} · por ${esc2(L.dim||'—')} (total ${fq(L.tot)} ${esc2(inf.un)})</div><table class="g"><tr><th>Categoría</th><th>Cantidad</th><th>% del nivel</th><th>Priorizado</th></tr>${L.items.map((x,j)=>`<tr><td>${esc2(x.n)}</td><td>${fq(x.c)}</td><td>${L.sum?(x.c/L.sum*100).toFixed(0):0}%</td><td>${L.eff===j&&x.c>0?'★':''}</td></tr>`).join('')}</table>`).join('')+(inf.pp?`<div class="sb" style="background:#E8F6EE">Problema priorizado: ${esc2(inf.pp)}</div>`:'');
@@ -748,7 +789,7 @@ function formCard(r){
   <div class="sub" style="flex-wrap:wrap">${chips}</div>
   <div class="mut" style="margin-bottom:8px"><b>Paso ${n} · ${S.t}</b> ${tag(FASE(n)+' · '+FN[FASE(n)],FC[FASE(n)])}</div>
   ${S.nota?`<div class="note">${S.nota}</div>`:''}
-  ${S.custom==='desglose'?desgCard(r):''}${n===4?`<div id="ishi" style="margin-bottom:12px">${ishiSVG(r)}</div>`:''}${S.custom==='w5h2'?w5Card():`<div class="form">${S.f.map(fld).join('')}</div>`}${warn}${extra}
+  ${S.custom==='desglose'?desgCard(r)+flowCard(r):''}${n===4?`<div id="ishi" style="margin-bottom:12px">${ishiSVG(r)}</div>`:''}${S.custom==='w5h2'?w5Card():`<div class="form">${S.f.map(fld).join('')}</div>`}${warn}${extra}
   <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" onclick="saveFormPaso(${n})">Guardar paso ${n}</button></div></div>`;
 }
 const esc2=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
@@ -767,7 +808,7 @@ function w5Upd(){const e=$('#w5btns');if(e)e.innerHTML=w5Btns();const c=$('#w5n'
 function fpSet(n,k,v){const r=cur();r.pasos=r.pasos||{};r.pasos[n]=r.pasos[n]||{};r.pasos[n][k]=v;r._dirty=n;if(n===4)updIshi()}
 async function saveFormPaso(n){
  const r=cur();const S=(FORMS[r.herr].p[n]||{});
- if(S.custom==='desglose'){const inf=desgInfo(r);const d=dsg();d.pp=inf.pp;d.dg=inf.lv.map(L=>'Nivel '+(L.i+1)+' por '+(L.dim||'—')+': '+L.items.filter(x=>x.n).map(x=>x.n+' '+fq(x.c)).join(', ')).join(' | ')}
+ if(S.custom==='desglose'){const inf=desgInfo(r);const d=dsg();const fi=flowInfo(r);if(!String(d.po||'').trim()&&fi.occ)d.po='Ocurre en «'+fi.occ+'»'+(fi.det?'; se detecta en «'+fi.det+'»':'')+'.';d.pp=inf.pp;d.dg=inf.lv.map(L=>'Nivel '+(L.i+1)+' por '+(L.dim||'—')+': '+L.items.filter(x=>x.n).map(x=>x.n+' '+fq(x.c)).join(', ')).join(' | ')}
  try{
   if(S.link==='ind'){const u=$('#ind_u').value,b=+$('#ind_b').value,m=+$('#ind_m').value;
    if(LIVE){putRdp(await api('PATCH','/rdp/'+r.id,{indicador_unidad:u,linea_base:b,meta:m}))}else{r.ind.u=u;r.base=b;r.meta=m;r.actual=r.paso<7?b:r.actual;recalc(r)}}
@@ -792,7 +833,7 @@ function docHTML(r){
   if(S.link&&S.link.startsWith('acc:'))x=accT(S.link.slice(4));
   if(S.link==='med')x=medT();
   if(n===1)x+=`<div class="sb">Impacto económico (pérdida anual)</div>${lossT()}`;
-  if(S.custom==='desglose')x=desgDoc(r)+x;
+  if(S.custom==='desglose')x=desgDoc(r)+flowDoc(r)+x;
   if(n===4)x=`<div style="padding:4px">${ishiSVG(r)}</div>`+x;
   return `<div class="blk"><div class="bh" style="background:${col(n)}">${n} · ${HX(S.t)} <span>${FASE(n)} · ${FN[FASE(n)]}</span></div>${S.nota?`<div class="nt">${HX(S.nota)}</div>`:''}${rows?`<table class="f">${rows}</table>`:''}${x}</div>`};
  const kv=rows=>`<table class="f">${rows.map(([l,v])=>`<tr><td class="l">${HX(l)}</td><td class="v">${nl(v)}</td></tr>`).join('')}</table>`;
@@ -805,7 +846,7 @@ function docHTML(r){
    box('Definir el problema',1,kv([['Qué + cuándo + dónde + por qué + cuánto',defSent()]])+`<div class="sb">Impacto económico (pérdida anual)</div>${lossT()}`),
    box('Establecer objetivo',3,kv([['Objetivo',val(3,'obj')]])+indT()),
    box('Medida de contención',1,accT('Contención')),
-   box('Desglosar el problema',2,desgDoc(r)+kv([['Punto de ocurrencia',val(2,'po')]]))],
+   box('Desglosar el problema',2,desgDoc(r)+flowDoc(r)+kv([['Punto de ocurrencia',val(2,'po')]]))],
   [box('Entender la causa raíz · Ishikawa + 5 Porqués',4,`<div style="padding:4px">${ishiSVG(r)}</div>`+kv(pqRows())),
    box('Desarrollar contramedidas',5,kv([['Criterio de selección',val(5,'crit')],['Observaciones de la implementación',val(6,'nota')]])+accT('Contramedida')),
    box('Confirmar contramedida · validación',7,kv([['Resultado',val(7,'res')],['Validación',lab(VALID,val(7,'val'))],['Conclusión',val(7,'concl')]])+medT()),
