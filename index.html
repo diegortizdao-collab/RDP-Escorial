@@ -22,6 +22,7 @@ main{padding:16px 22px 30px;max-width:1500px;margin:0 auto}
 .banner{background:#FFF4E5;border:1px solid #F5D9A8;color:#7A4A00;border-radius:10px;padding:8px 14px;font-size:12.5px;margin-bottom:14px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(11,37,69,.05)}
 .card h3{margin:0 0 10px;font-size:15px;color:var(--navy);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.w5b{background:#fff;border:2px solid #D0D5DD;color:#475467;border-radius:20px;padding:6px 14px;font-weight:700;cursor:pointer;font-size:13px}.w5b:hover{border-color:#98A2B3}
 .sub{border-top:1px solid var(--line);margin-top:16px;padding-top:12px}
 .stn{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:12px;align-items:center;justify-content:center}.stn.ok{background:#22A06B}
 .card h3 small{font-weight:400;color:var(--mut);font-size:12px}
@@ -559,7 +560,7 @@ const VALID=[['','— Elegí —'],['total','Mejoró totalmente → estandarizar
 const ESTT=[['','— Elegí —'],['nuevo','Nuevo estándar creado'],['act','Estándar vigente actualizado'],['na','N/A']];
 const FORMS={
  A3:{cod:'FR-MCO-010',p:{
-  1:{t:'Clarificar el problema (5W + 2H)',f:W5H2,link:'acc:Contención'},
+  1:{t:'Clarificar el problema (5W + 2H)',custom:'w5h2',f:W5H2,link:'acc:Contención'},
   2:{t:'Desglosar el problema',custom:'desglose',f:[['po','PO · Punto de ocurrencia (dónde y cuándo ocurre)','area']]},
   3:{t:'Establecer el objetivo',f:[['obj','Objetivo (qué, cuánto y para cuándo)','area'],['fecha','Fecha objetivo','date']],link:'ind'},
   4:{t:'Análisis de causa raíz (Ishikawa + 5 Porqués)',f:ISH.concat(PQ('a'))},
@@ -747,10 +748,22 @@ function formCard(r){
   <div class="sub" style="flex-wrap:wrap">${chips}</div>
   <div class="mut" style="margin-bottom:8px"><b>Paso ${n} · ${S.t}</b> ${tag(FASE(n)+' · '+FN[FASE(n)],FC[FASE(n)])}</div>
   ${S.nota?`<div class="note">${S.nota}</div>`:''}
-  ${S.custom==='desglose'?desgCard(r):''}${n===4?`<div id="ishi" style="margin-bottom:12px">${ishiSVG(r)}</div>`:''}<div class="form">${S.f.map(fld).join('')}</div>${warn}${extra}
+  ${S.custom==='desglose'?desgCard(r):''}${n===4?`<div id="ishi" style="margin-bottom:12px">${ishiSVG(r)}</div>`:''}${S.custom==='w5h2'?w5Card():`<div class="form">${S.f.map(fld).join('')}</div>`}${warn}${extra}
   <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" onclick="saveFormPaso(${n})">Guardar paso ${n}</button></div></div>`;
 }
 const esc2=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+/* ───────── Paso 1: botones 5W + 2H que abren su cuadro de texto ───────── */
+const W5B=[['que','¿Qué?','#2E9BD6','¿Qué pasó? Describí el problema con hechos, sin causas ni culpables.'],['donde','¿Dónde?','#F28C28','¿Dónde ocurre? Línea, máquina, puesto o sector.'],['cuando','¿Cuándo?','#22A06B','¿Cuándo ocurrió o se detectó? Fecha, turno, frecuencia.'],['quien','¿Quién?','#8E4EC6','¿Quién lo detectó? Persona, puesto o cliente interno/externo.'],['porque','¿Por qué es un problema?','#F2A93B','¿Qué afecta? Seguridad, calidad, entrega, costo, cliente.'],['como','¿Cómo?','#0F5C8C','¿Cómo ocurrió o cómo se detectó?'],['cuanto','¿Cuánto?','#E5484D','¿Cuánto? Cantidad, tiempo, costo o porcentaje.']];
+const w5Val=k=>String((((cur().pasos||{})[1])||{})[k]||'').trim();
+function w5Btns(){return W5B.map(([k,l,c])=>{const on=(UI.w5||'que')===k,ok=!!w5Val(k);return `<button type="button" class="w5b" onclick="UI.w5='${k}';renderFicha()" style="${on?`background:${c};border-color:${c};color:#fff`:ok?`border-color:${c};color:${c}`:''}">${ok?'✓ ':''}${l}</button>`}).join('')}
+function w5Card(){
+ const k=UI.w5||'que',B=W5B.find(x=>x[0]===k)||W5B[0],i=W5B.indexOf(B),nx=W5B[i+1],n=W5B.filter(x=>w5Val(x[0])).length;
+ return `<div class="mut" style="margin-bottom:6px">Elegí cada pregunta para completarla · <b id="w5n">${n}</b> de 7 respondidas</div>
+ <div id="w5btns" class="rowh" style="gap:6px;flex-wrap:wrap">${w5Btns()}</div>
+ <div style="margin-top:10px;border-left:4px solid ${B[2]};padding-left:10px"><label class="lab">${B[1]}</label><textarea id="w5t" rows="4" placeholder="${esc2(B[3])}" oninput="fpSet(1,'${B[0]}',this.value);w5Upd()">${esc2(w5Val(B[0]))}</textarea>
+ <div class="rowh" style="margin-top:6px">${nx?`<button type="button" class="btn ghost" onclick="UI.w5='${nx[0]}';renderFicha()">Siguiente: ${nx[1]} ▶</button>`:''}</div></div>
+ ${n?`<div class="tw" style="margin-top:10px"><table><tbody>${W5B.filter(x=>w5Val(x[0])).map(x=>`<tr style="cursor:pointer" onclick="UI.w5='${x[0]}';renderFicha()"><td class="nw" style="color:${x[2]};font-weight:700">${x[1]}</td><td>${esc2(w5Val(x[0]).slice(0,140))}${w5Val(x[0]).length>140?'…':''}</td></tr>`).join('')}</tbody></table></div>`:''}`}
+function w5Upd(){const e=$('#w5btns');if(e)e.innerHTML=w5Btns();const c=$('#w5n');if(c)c.textContent=W5B.filter(x=>w5Val(x[0])).length}
 function fpSet(n,k,v){const r=cur();r.pasos=r.pasos||{};r.pasos[n]=r.pasos[n]||{};r.pasos[n][k]=v;r._dirty=n;if(n===4)updIshi()}
 async function saveFormPaso(n){
  const r=cur();const S=(FORMS[r.herr].p[n]||{});
