@@ -560,7 +560,7 @@ const VALID=[['','— Elegí —'],['total','Mejoró totalmente → estandarizar
 const ESTT=[['','— Elegí —'],['nuevo','Nuevo estándar creado'],['act','Estándar vigente actualizado'],['na','N/A']];
 const FORMS={
  A3:{cod:'FR-MCO-010',p:{
-  1:{t:'Clarificar el problema (5W + 2H)',custom:'w5h2',f:W5H2,link:'acc:Contención'},
+  1:{t:'Clarificación del problema',custom:'w5h2',f:W5H2,link:'acc:Contención'},
   2:{t:'Desglosar el problema',custom:'desglose',f:[['po','PO · Punto de ocurrencia (dónde y cuándo ocurre)','area']]},
   3:{t:'Establecer el objetivo',f:[['obj','Objetivo (qué, cuánto y para cuándo)','area'],['fecha','Fecha objetivo','date']],link:'ind'},
   4:{t:'Análisis de causa raíz (Ishikawa + 5 Porqués)',f:ISH.concat(PQ('a'))},
@@ -829,7 +829,11 @@ function docHTML(r){
  const medT=()=>{const M=r.meds||[];return `<table class="g"><tr><th>Fecha</th><th>Valor (${HX(r.ind.u)})</th><th>Nota</th></tr>${M.map(m=>`<tr><td>${fd(D(m.fecha))}</td><td>${fv(+m.valor)}</td><td>${HX(m.nota||'')}</td></tr>`).join('')||'<tr><td colspan="3" class="e">Sin mediciones registradas.</td></tr>'}</table>`};
  const indT=()=>`<table class="g"><tr><th>Indicador</th><th>Situación inicial</th><th>Situación objetivo</th><th>Valor actual</th></tr><tr><td>${HX(r.ind.u)}</td><td>${fv(r.base)}</td><td>${fv(r.meta)}</td><td>${fv(r.actual)}</td></tr></table>`;
  const lossT=()=>`<table class="g"><tr><th>Concepto</th><th>Unidad</th><th>Costo unit.</th><th>Cant. antes</th><th>Cant. después</th><th>Pérdida anual</th><th>Cálculo de la cantidad · criterio</th></tr>${(r.lines||[]).map(l=>`<tr><td>${HX(l.concepto)}</td><td>${HX(l.unidad)}</td><td>${money(l.costo)}</td><td>${fv(l.antes)}</td><td>${l.desp==null?'—':fv(l.desp)}</td><td>${money(l.antes*l.costo)}</td><td>${HX(calcTxt(l))}${l.calc&&l.calc.nota?'<br><i>'+HX(l.calc.nota)+'</i>':''}${calcTxt(l)||(l.calc&&l.calc.nota)?'<br>':''}${HX(l.mode==='std'?'Costo: matriz de costos':l.fuente||'')}</td></tr>`).join('')||'<tr><td colspan="7" class="e">Sin pérdidas cargadas.</td></tr>'}</table>`;
- const block=n=>{const S=P[n];if(!S)return'';
+ const gapDoc=()=>{const u=HX(r.ind.u||''),b=+r.base,m=+r.meta,g=Math.abs(b-m),F=v=>isFinite(v)?fv(v):'—',T=(x,y,a,t,w)=>`<text x="${x}" y="${y}" text-anchor="middle" font-size="${w?15:14}" font-weight="${w?700:600}" fill="#fff">${t}</text>`;
+  return `<div style="padding:6px 10px"><div style="color:#667085;margin-bottom:2px">Indicador: <b style="color:#0B2A4A">${u}</b> · La brecha entre la situación inicial y la objetivo es lo que define el problema.</div><svg viewBox="0 0 560 200" style="width:100%;max-width:560px;height:auto"><rect x="10" y="6" width="210" height="66" rx="10" fill="#4285F4" stroke="#fff" stroke-width="3"/>${T(115,28,0,'Situación inicial')}${T(115,46,0,'(promedio / línea base)')}${T(115,64,0,F(b),1)}<rect x="10" y="128" width="210" height="66" rx="10" fill="#4285F4" stroke="#fff" stroke-width="3"/>${T(115,150,0,'Situación objetivo')}${T(115,168,0,'(meta)')}${T(115,186,0,F(m),1)}<polygon points="115,74 143,92 129,92 129,108 143,108 115,126 87,108 101,108 101,92 87,92" fill="#4285F4"/><polygon points="129,92 290,92 290,74 340,100 290,126 290,108 129,108" fill="#4285F4"/><rect x="350" y="64" width="200" height="72" rx="10" fill="#FFA940" stroke="#fff" stroke-width="3"/>${T(450,92,0,'GAP')}${T(450,118,0,F(g)+' '+u,1)}</svg></div>`};
+ const block1=()=>{const S=P[1],rows=S.f.map(x=>{const [k,l,t,o]=x;let v=val(1,k);if(t==='sel'&&o){const f=o.find(z=>z[0]===v);v=f?f[1]:''}return `<tr><td class="l">${HX(l)}</td><td class="v">${nl(v)}</td></tr>`}).join('');
+  return `<div class="blk"><div class="bh" style="background:${col(1)}">1 · ${HX(S.t)} <span>${FASE(1)} · ${FN[FASE(1)]}</span></div><div class="sb" style="border-top:0">1.1 · 5W + 2H</div><table class="f">${rows}</table><div class="sb">1.2 · Contención</div>${accT('Contención')}<div class="sb">1.3 · Brecha (situación inicial · situación objetivo · GAP)</div>${gapDoc()}<div class="sb">Impacto económico (pérdida anual)</div>${lossT()}</div>`};
+ const block=n=>{const S=P[n];if(!S)return'';if(n===1)return block1();
   const rows=S.f.map(x=>{const [k,l,t,o]=x;let v=val(n,k);if(t==='sel'&&o){const f=o.find(z=>z[0]===v);v=f?f[1]:''}return `<tr><td class="l">${HX(l)}</td><td class="v">${nl(v)}</td></tr>`}).join('');
   let x='';
   if(S.link==='ind')x=indT();
